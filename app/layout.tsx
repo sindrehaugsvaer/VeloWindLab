@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GPX Cycling Analyzer",
+  title: "VeloWindLab",
   description: "Analyze cycling routes from GPX files with elevation profiles, climb detection, and weather forecasts",
-  keywords: ["GPX", "cycling", "bike", "elevation", "climb", "route", "analyzer"],
+  keywords: ["GPX", "cycling", "bike", "elevation", "climb", "route", "analyzer", "wind", "weather"],
 };
 
 export default function RootLayout({

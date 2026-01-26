@@ -1,4 +1,4 @@
-# GPX Cycling Analyzer
+# VeloWindLab
 
 A production-quality web application for analyzing cycling routes from GPX files. Built with Next.js 15, React 19, TypeScript, and Visx for data visualization.
 
@@ -35,7 +35,7 @@ A production-quality web application for analyzing cycling routes from GPX files
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd gpx-analyzer
+cd velowindlab
 
 # Install dependencies
 npm install --legacy-peer-deps
@@ -65,7 +65,7 @@ npm start
 ## Project Structure
 
 ```
-gpx-analyzer/
+velowindlab/
 ├── app/
 │   ├── page.tsx              # Main application layout
 │   ├── layout.tsx            # Root layout with fonts

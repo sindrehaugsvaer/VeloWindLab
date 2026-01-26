@@ -64,7 +64,7 @@ function GPXAnalyzerContent() {
         <div className="w-full max-w-2xl px-4 sm:px-8">
           <div className="mb-6 sm:mb-8 text-center">
             <h1 className="text-2xl sm:text-4xl font-bold text-zinc-900 dark:text-zinc-50 mb-2 sm:mb-3">
-              GPX Cycling Analyzer
+              VeloWindLab
             </h1>
             <p className="text-base sm:text-lg text-zinc-600 dark:text-zinc-400">
               Upload your cycling route to analyze elevation, climbs, and statistics
@@ -88,7 +88,7 @@ function GPXAnalyzerContent() {
       <header className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-4 sm:px-6 py-3 sm:py-4 shrink-0">
         <div className="min-w-0 flex-1">
           <h1 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-50 truncate">
-            GPX Cycling Analyzer
+            VeloWindLab
           </h1>
           <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 truncate">
             {data.metadata.name || data.fileName.replace(/\.gpx$/i, '')}
