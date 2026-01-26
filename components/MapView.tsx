@@ -75,6 +75,15 @@ export default function MapView() {
     features: gradientSegments
   };
 
+  const simplifiedRouteGeoJson = data ? {
+    type: 'Feature' as const,
+    geometry: {
+      type: 'LineString' as const,
+      coordinates: data.simplifiedPoints.map(p => [p.lon, p.lat])
+    },
+    properties: {}
+  } : null;
+
   return (
     <div className="relative w-full h-full">
       <Map
@@ -86,6 +95,32 @@ export default function MapView() {
         style={{ width: '100%', height: '100%' }}
         attributionControl={{ compact: true }}
       >
+        {data && simplifiedRouteGeoJson && (
+          <Source id="route-simplified" type="geojson" data={simplifiedRouteGeoJson}>
+            <Layer
+              id="route-outline"
+              type="line"
+              paint={{
+                'line-color': '#0ea5e9',
+                'line-width': [
+                  'interpolate',
+                  ['linear'],
+                  ['zoom'],
+                  0, 3,
+                  5, 4,
+                  8, 5,
+                  12, 6
+                ],
+                'line-opacity': 1
+              }}
+              layout={{
+                'line-join': 'round',
+                'line-cap': 'round'
+              }}
+            />
+          </Source>
+        )}
+
         {data && gradientSegments.length > 0 && (
           <Source id="route-gradient" type="geojson" data={gradientGeoJson}>
             <Layer
@@ -93,7 +128,16 @@ export default function MapView() {
               type="line"
               paint={{
                 'line-color': ['get', 'color'],
-                'line-width': 4,
+                'line-width': [
+                  'interpolate',
+                  ['exponential', 1.5],
+                  ['zoom'],
+                  0, 2,
+                  5, 3,
+                  10, 4,
+                  15, 5,
+                  20, 6
+                ],
                 'line-opacity': 0.9
               }}
               layout={{

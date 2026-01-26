@@ -9,6 +9,7 @@ import ElevationChart from "@/components/ElevationChart";
 import StatsPanel from "@/components/StatsPanel";
 import ClimbsList from "@/components/ClimbsList";
 import WeatherPanel from "@/components/WeatherPanel";
+import RouteSelector from "@/components/RouteSelector";
 
 function GPXAnalyzerContent() {
   const { data, loading, error, clearData } = useGPX();
@@ -126,20 +127,22 @@ function GPXAnalyzerContent() {
   return (
     <div className="flex h-screen w-full flex-col bg-zinc-50 dark:bg-zinc-900 overflow-hidden">
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-4 sm:px-6 py-3 sm:py-4 shrink-0">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-50 truncate">
+      <header className="flex items-center border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-4 sm:px-6 py-3 sm:py-4 shrink-0 gap-2">
+        <button 
+          onClick={clearData}
+          className="shrink-0 transition-opacity hover:opacity-70 cursor-pointer"
+          title="Back to upload screen"
+        >
+          <h1 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-50 whitespace-nowrap">
             Velo<span className="text-sky-500">Wind</span>Lab
           </h1>
-          <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 truncate">
-            {data.metadata.name || data.fileName.replace(/\.gpx$/i, "")}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-4">
+        </button>
+        <RouteSelector />
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {/* Mobile sidebar toggle */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden rounded-lg bg-zinc-100 dark:bg-zinc-800 p-2 text-zinc-700 dark:text-zinc-300 transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-700"
+            className="lg:hidden rounded-lg bg-zinc-100 dark:bg-zinc-800 p-2 text-zinc-700 dark:text-zinc-300 transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-700 cursor-pointer"
             aria-label="Toggle stats panel"
           >
             <svg
@@ -158,7 +161,7 @@ function GPXAnalyzerContent() {
           </button>
           <button
             onClick={clearData}
-            className="rounded-lg bg-zinc-900 dark:bg-zinc-100 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white dark:text-zinc-900 transition-colors hover:bg-zinc-700 dark:hover:bg-zinc-300 whitespace-nowrap"
+            className="rounded-lg bg-zinc-900 dark:bg-zinc-100 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white dark:text-zinc-900 transition-colors hover:bg-zinc-700 dark:hover:bg-zinc-300 whitespace-nowrap cursor-pointer"
           >
             Upload New
           </button>

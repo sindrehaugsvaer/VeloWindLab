@@ -4,8 +4,14 @@ import { useCallback, useState } from "react";
 import { useGPX } from "@/context/GPXContext";
 
 export default function GPXUploader() {
-  const { processGPX, loading } = useGPX();
+  const { processGPX, loading, savedRoutes, loadRoute } = useGPX();
   const [dragActive, setDragActive] = useState(false);
+
+  const handleLoadSavedRoute = useCallback(() => {
+    if (savedRoutes.length > 0) {
+      loadRoute(savedRoutes[savedRoutes.length - 1].id);
+    }
+  }, [savedRoutes, loadRoute]);
 
   const handleFile = useCallback(
     async (file: File) => {
@@ -138,18 +144,33 @@ export default function GPXUploader() {
         </div>
       </div>
 
-      <button
-        onClick={handleSampleLoad}
-        disabled={loading}
-        className="mt-6 px-6 py-2 text-sm font-medium text-sky-600 dark:text-sky-400 
-                   hover:text-sky-700 dark:hover:text-sky-300
-                   border border-sky-600 dark:border-sky-500 
-                   hover:border-sky-700 dark:hover:border-sky-400 rounded-lg
-                   transition-colors disabled:opacity-50 disabled:cursor-not-allowed
-                   bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm"
-      >
-        Load Sample Route
-      </button>
+      <div className="flex gap-3 mt-6">
+        {savedRoutes.length > 0 && (
+          <button
+            onClick={handleLoadSavedRoute}
+            disabled={loading}
+            className="px-6 py-2 text-sm font-medium text-white dark:text-zinc-900
+                       bg-sky-600 dark:bg-sky-400 hover:bg-sky-700 dark:hover:bg-sky-300
+                       rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          >
+            View Saved Routes ({savedRoutes.length})
+          </button>
+        )}
+        {!savedRoutes.some(r => r.name.toLowerCase() === "oslo") && (
+          <button
+            onClick={handleSampleLoad}
+            disabled={loading}
+            className="px-6 py-2 text-sm font-medium text-sky-600 dark:text-sky-400 
+                       hover:text-sky-700 dark:hover:text-sky-300
+                       border border-sky-600 dark:border-sky-500 
+                       hover:border-sky-700 dark:hover:border-sky-400 rounded-lg
+                       transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer
+                       bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm"
+          >
+            Load Sample Route
+          </button>
+        )}
+      </div>
 
       <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400 max-w-2xl text-center">
         All processing runs locally in your browser for privacy and

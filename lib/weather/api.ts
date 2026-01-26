@@ -265,7 +265,7 @@ interface RoutePoint {
   distance: number;
 }
 
-const WIND_SAMPLE_INTERVAL_METERS = 10000;
+const WIND_SAMPLE_INTERVAL_METERS = 5000;
 
 export function sampleRoutePoints(
   points: Array<{ latitude: number; longitude: number; distance: number }>
