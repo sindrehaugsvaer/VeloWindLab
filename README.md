@@ -206,7 +206,7 @@ Deploy the `.next` folder to any Node.js hosting provider, or use `output: 'expo
 
 ## License
 
-MIT
+Apache 2.0
 
 ## Contributing
 
