@@ -48,7 +48,7 @@ interface ElevationChartProps {
 }
 
 export default function ElevationChart({ width, height }: ElevationChartProps) {
-  const { data, setHoverPoint, routeWindData, selectedClimbIndex } = useGPX();
+  const { data, setHoverPoint, routeWindData, selectedClimbIndex, lapCount } = useGPX();
   const brushRef = useRef<BaseBrush | null>(null);
   const [filteredData, setFilteredData] = useState<EnhancedPoint[] | null>(null);
   const [segmentStats, setSegmentStats] = useState<SegmentStats | null>(null);
@@ -62,6 +62,47 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
     hideTooltip,
   } = useTooltip<EnhancedPoint>();
 
+  const lappedPoints = useMemo(() => {
+    if (!data) return [];
+    if (lapCount <= 1) return data.points;
+    
+    const singleLapDistance = data.stats.totalDistance;
+    const result: EnhancedPoint[] = [];
+    
+    for (let lap = 0; lap < lapCount; lap++) {
+      const offset = lap * singleLapDistance;
+      for (const point of data.points) {
+        result.push({
+          ...point,
+          distance: point.distance + offset,
+        });
+      }
+    }
+    
+    return result;
+  }, [data, lapCount]);
+
+  const lappedClimbs = useMemo(() => {
+    if (!data) return [];
+    if (lapCount <= 1) return data.climbs;
+    
+    const singleLapDistance = data.stats.totalDistance;
+    const result: Climb[] = [];
+    
+    for (let lap = 0; lap < lapCount; lap++) {
+      const offset = lap * singleLapDistance;
+      for (const climb of data.climbs) {
+        result.push({
+          ...climb,
+          startDistance: climb.startDistance + offset,
+          endDistance: climb.endDistance + offset,
+        });
+      }
+    }
+    
+    return result;
+  }, [data, lapCount]);
+
   const brushHeight = 60;
   const topChartHeight = height - brushHeight - chartSeparation;
   const topChartBottomMargin = chartSeparation + brushHeight + margin.bottom;
@@ -73,13 +114,13 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
     () => {
       if (!data) return scaleLinear({ domain: [0, 1], range: [0, xMax] });
       
-      const maxDistance = Math.max(...data.points.map(p => p.distance));
+      const maxDistance = Math.max(...lappedPoints.map(p => p.distance));
       return scaleLinear({
         domain: [0, maxDistance],
         range: [0, xMax],
       });
     },
-    [data, xMax]
+    [data, lappedPoints, xMax]
   );
 
   const brushYScale = useMemo(
@@ -88,7 +129,7 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
         return scaleLinear({ domain: [0, 100], range: [brushHeight - brushMargin.top - brushMargin.bottom, 0] });
       }
 
-      const elevations = data.points.map(p => p.elevation ?? 0);
+      const elevations = lappedPoints.map(p => p.elevation ?? 0);
       const minElev = Math.min(...elevations);
       const maxElev = Math.max(...elevations);
       const padding = (maxElev - minElev) * 0.1 || 10;
@@ -98,7 +139,7 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
         range: [brushHeight - brushMargin.top - brushMargin.bottom, 0],
       });
     },
-    [data, brushHeight]
+    [data, lappedPoints, brushHeight]
   );
 
   const onBrushChange = useCallback(
@@ -110,7 +151,7 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
       }
 
       const { x0, x1 } = domain;
-      const filtered = data.points.filter((p) => {
+      const filtered = lappedPoints.filter((p) => {
         const x = p.distance;
         return x >= x0 && x <= x1;
       });
@@ -146,22 +187,22 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
         setSegmentStats(stats);
       }
     },
-    [data]
+    [data, lappedPoints]
   );
 
   const initialBrushPosition = useMemo(
     () => {
-      if (!data) return undefined;
-      const maxDist = Math.max(...data.points.map(p => p.distance));
+      if (!data || lappedPoints.length === 0) return undefined;
+      const maxDist = Math.max(...lappedPoints.map(p => p.distance));
       return {
         start: { x: maxDist * 0.25 },
         end: { x: maxDist * 0.75 },
       };
     },
-    [data]
+    [data, lappedPoints]
   );
 
-  const displayData = filteredData || data?.points || [];
+  const displayData = filteredData || lappedPoints;
 
   const yScale = useMemo(
     () => {
@@ -195,13 +236,13 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
         });
       }
 
-      const maxDistance = Math.max(...data.points.map(p => p.distance));
+      const maxDistance = Math.max(...lappedPoints.map(p => p.distance));
       return scaleLinear({
         domain: [0, maxDistance],
         range: [0, xMax],
       });
     },
-    [data, filteredData, xMax]
+    [data, filteredData, lappedPoints, xMax]
   );
 
   const windYScale = useMemo(
@@ -277,22 +318,22 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
 
   const handleTooltip = useCallback(
     (event: React.TouchEvent<SVGRectElement> | React.MouseEvent<SVGRectElement>) => {
-      if (!data) return;
+      if (!data || lappedPoints.length === 0) return;
 
       const point = localPoint(event);
       if (!point) return;
 
       const x0 = xScale.invert(point.x - margin.left);
-      const index = bisectDistance(data.points, x0, 1);
-      const d0 = data.points[index - 1];
-      const d1 = data.points[index];
+      const index = bisectDistance(lappedPoints, x0, 1);
+      const d0 = lappedPoints[index - 1];
+      const d1 = lappedPoints[index];
       
       if (!d0 || !d1) return;
 
       const d = x0 - d0.distance > d1.distance - x0 ? d1 : d0;
-      const actualIndex = data.points.indexOf(d);
+      const actualIndex = lappedPoints.indexOf(d);
 
-      const currentClimb = data.climbs.find(
+      const currentClimb = lappedClimbs.find(
         climb => d.distance >= climb.startDistance && d.distance <= climb.endDistance
       );
       setHoveredClimb(currentClimb || null);
@@ -305,7 +346,7 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
 
       setHoverPoint(d, actualIndex);
     },
-    [data, xScale, yScale, showTooltip, setHoverPoint]
+    [data, lappedPoints, lappedClimbs, xScale, yScale, showTooltip, setHoverPoint]
   );
 
   const handleMouseLeave = useCallback(() => {
@@ -335,7 +376,7 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
             stroke="rgba(0,0,0,0.1)"
           />
 
-          {data.climbs.map((climb, i) => {
+          {lappedClimbs.map((climb, i) => {
             const x1 = xScale(climb.startDistance);
             const x2 = xScale(climb.endDistance);
             const climbWidth = x2 - x1;
@@ -495,7 +536,7 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
 
         <Group left={brushMargin.left} top={topChartHeight + chartSeparation + brushMargin.top}>
           <AreaClosed<EnhancedPoint>
-            data={data.points}
+            data={lappedPoints}
             x={d => brushXScale(d.distance)}
             y={d => brushYScale(d.elevation ?? 0)}
             yScale={brushYScale}

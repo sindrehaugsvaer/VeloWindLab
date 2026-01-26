@@ -1,11 +1,39 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useGPX } from '@/context/GPXContext';
 import { getClimbCategoryLabel, getClimbCategoryColor } from '@/lib/calculations/climbs';
 import Accordion from './Accordion';
+import type { Climb } from '@/lib/gpx/types';
 
 export default function ClimbsList() {
   const { data, lapCount, selectedClimbIndex, setSelectedClimbIndex } = useGPX();
+
+  const lappedClimbs = useMemo(() => {
+    if (!data || data.climbs.length === 0) return [];
+    if (lapCount <= 1) return data.climbs.map((climb, i) => ({ climb, lapNumber: 1, originalIndex: i }));
+    
+    const singleLapDistance = data.stats.totalDistance;
+    const result: Array<{ climb: Climb; lapNumber: number; originalIndex: number }> = [];
+    
+    for (let lap = 0; lap < lapCount; lap++) {
+      const offset = lap * singleLapDistance;
+      for (let i = 0; i < data.climbs.length; i++) {
+        const climb = data.climbs[i];
+        result.push({
+          climb: {
+            ...climb,
+            startDistance: climb.startDistance + offset,
+            endDistance: climb.endDistance + offset,
+          },
+          lapNumber: lap + 1,
+          originalIndex: i,
+        });
+      }
+    }
+    
+    return result;
+  }, [data, lapCount]);
 
   if (!data || data.climbs.length === 0) {
     return null;
@@ -25,8 +53,12 @@ export default function ClimbsList() {
   return (
     <Accordion title="Climbs" badge={badgeText} defaultOpen={false}>
       <div className="space-y-3">
-        {data.climbs.map((climb, index) => {
+        {lappedClimbs.map(({ climb, lapNumber, originalIndex }, index) => {
           const isSelected = selectedClimbIndex === index;
+          const climbLabel = lapCount > 1 
+            ? `Lap ${lapNumber} - Climb ${originalIndex + 1}`
+            : `Climb ${originalIndex + 1}`;
+          
           return (
             <div
               key={index}
@@ -39,7 +71,7 @@ export default function ClimbsList() {
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="font-medium text-gray-900 dark:text-gray-100">
-                  Climb {index + 1}
+                  {climbLabel}
                 </span>
                 <span
                   className="px-2 py-1 rounded text-xs font-semibold text-white"
