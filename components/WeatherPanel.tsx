@@ -296,7 +296,7 @@ function RaceWeatherCard({
               size={16}
               color="white"
             />
-            {Math.round(weather.windSpeed)} km/h {windDir}
+            {(weather.windSpeed / 3.6).toFixed(1)} m/s {windDir}
           </div>
         </div>
         <div className="bg-white/10 rounded-lg p-2">
@@ -401,7 +401,7 @@ function LocationWeatherCard({
           <div className="flex justify-between">
             <span className="text-gray-500 dark:text-gray-400">Wind</span>
             <span className="text-gray-900 dark:text-gray-100">
-              {Math.round(current.windSpeed)} km/h {windDir}
+              {(current.windSpeed / 3.6).toFixed(1)} m/s {windDir}
             </span>
           </div>
           <div className="flex justify-between">

@@ -95,9 +95,10 @@ function GPXAnalyzerContent() {
             </h1>
             <p className="text-base sm:text-lg text-zinc-600 dark:text-zinc-400">
               Upload your cycling route to generate a detailed, interactive
-              elevation profile, detect and categorize climbs, and compute
+              elevation profile, detect and categorize climbs, compute
               comprehensive ride statistics such as distance, total
-              ascent/descent, average and moving speed, and gradient segments.
+              ascent/descent, average and moving speed, gradient segments, and
+              get accurate weather and wind forecasts for your planned rides.
             </p>
           </div>
           <GPXUploader />

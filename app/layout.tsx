@@ -16,6 +16,11 @@ export const metadata: Metadata = {
   title: "VeloWindLab",
   description: "Analyze cycling routes from GPX files with elevation profiles, climb detection, and weather forecasts",
   keywords: ["GPX", "cycling", "bike", "elevation", "climb", "route", "analyzer", "wind", "weather"],
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon-192.png",
+  },
 };
 
 export default function RootLayout({
@@ -25,6 +30,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="VeloWindLab" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

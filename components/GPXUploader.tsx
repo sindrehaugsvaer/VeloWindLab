@@ -175,8 +175,7 @@ export default function GPXUploader() {
       <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400 max-w-2xl text-center">
         All processing runs locally in your browser for privacy and
         responsiveness. Use the built-in sample route to explore features like
-        segment selection, route simplification for smooth map rendering, and
-        exportable metrics to analyze performance or plan future rides.
+        segment selection and route simplification for smooth map rendering.
       </p>
     </div>
   );

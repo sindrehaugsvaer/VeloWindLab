@@ -248,13 +248,13 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
   const windYScale = useMemo(
     () => {
       if (routeWindData.length === 0) {
-        return scaleLinear({ domain: [0, 50], range: [yMax, 0] });
+        return scaleLinear({ domain: [0, 15], range: [yMax, 0] });
       }
 
       const maxWind = Math.max(
         ...routeWindData.map(w => Math.max(w.windSpeed, w.windGust))
-      );
-      const paddedMax = Math.ceil(maxWind / 10) * 10 + 5;
+      ) / 3.6; // Convert km/h to m/s
+      const paddedMax = Math.ceil(maxWind / 5) * 5 + 2;
 
       return scaleLinear({
         domain: [0, paddedMax],
@@ -415,7 +415,7 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
               <LinePath
                 data={interpolatedWindData}
                 x={d => xScale(d.distance)}
-                y={d => windYScale(d.windGust)}
+                y={d => windYScale(d.windGust / 3.6)}
                 stroke="#fdba74"
                 strokeWidth={1.5}
                 strokeOpacity={0.7}
@@ -424,7 +424,7 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
               <LinePath
                 data={interpolatedWindData}
                 x={d => xScale(d.distance)}
-                y={d => windYScale(d.windSpeed)}
+                y={d => windYScale(d.windSpeed / 3.6)}
                 stroke="#2563eb"
                 strokeWidth={2}
                 curve={curveMonotoneX}
@@ -507,7 +507,7 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
               left={xMax}
               scale={windYScale}
               numTicks={4}
-              label="Wind (km/h)"
+              label="Wind (m/s)"
               labelProps={{
                 fontSize: 12,
                 textAnchor: 'middle',
@@ -622,8 +622,8 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
                 return (
                   <div className="mt-2 pt-2 border-t border-gray-600">
                     <div className="font-semibold text-blue-400">Wind</div>
-                    <div>Speed: {Math.round(wind.windSpeed)} km/h</div>
-                    <div>Gust: {Math.round(wind.windGust)} km/h</div>
+                    <div>Speed: {(wind.windSpeed / 3.6).toFixed(1)} m/s</div>
+                    <div>Gust: {(wind.windGust / 3.6).toFixed(1)} m/s</div>
                   </div>
                 );
               }

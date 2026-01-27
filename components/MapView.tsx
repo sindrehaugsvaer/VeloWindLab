@@ -215,11 +215,11 @@ function WindLegend({ windData }: { windData: RouteWindPoint[] }) {
       <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
         <div className="flex justify-between gap-4">
           <span>Avg Speed:</span>
-          <span className="font-medium text-gray-900 dark:text-gray-100">{Math.round(avgSpeed)} km/h</span>
+          <span className="font-medium text-gray-900 dark:text-gray-100">{(avgSpeed / 3.6).toFixed(1)} m/s</span>
         </div>
         <div className="flex justify-between gap-4">
           <span>Max Gust:</span>
-          <span className="font-medium text-gray-900 dark:text-gray-100">{Math.round(maxGust)} km/h</span>
+          <span className="font-medium text-gray-900 dark:text-gray-100">{(maxGust / 3.6).toFixed(1)} m/s</span>
         </div>
         <div className="flex justify-between gap-4">
           <span>Samples:</span>
