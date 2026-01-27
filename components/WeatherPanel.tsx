@@ -164,7 +164,7 @@ export default function WeatherPanel() {
   }
 
   return (
-    <Accordion title="Weather" badge={raceDateTime ? "Race Mode" : "Current"}>
+    <Accordion title="Weather" badge={raceDateTime ? "Race Mode" : "Current"} defaultOpen={false}>
       <div className="space-y-6">
         <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
           <label className="block text-xs font-medium text-blue-800 dark:text-blue-300 uppercase tracking-wide mb-2">
