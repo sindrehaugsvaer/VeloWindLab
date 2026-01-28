@@ -416,9 +416,9 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
                 data={interpolatedWindData}
                 x={d => xScale(d.distance)}
                 y={d => windYScale(d.windGust / 3.6)}
-                stroke="#fdba74"
+                stroke="#f472b6"
                 strokeWidth={1.5}
-                strokeOpacity={0.7}
+                strokeOpacity={0.8}
                 curve={curveMonotoneX}
               />
               <LinePath
@@ -596,7 +596,7 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
               <span className="text-zinc-600 dark:text-zinc-400">Wind</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-4 h-0.5 bg-orange-300"></div>
+              <div className="w-4 h-0.5 bg-pink-400"></div>
               <span className="text-zinc-600 dark:text-zinc-400">Gust</span>
             </div>
           </div>

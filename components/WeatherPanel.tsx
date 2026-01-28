@@ -11,8 +11,6 @@ import { getWeatherDescription, getWindDirection } from "@/lib/weather/types";
 import type { WeatherData, LocationWeather } from "@/lib/weather/types";
 import type { RaceTimeWeather } from "@/lib/weather/api";
 import Accordion from "./Accordion";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 
 export default function WeatherPanel() {
   const {
@@ -29,7 +27,17 @@ export default function WeatherPanel() {
   const [raceLoading, setRaceLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { minDate, maxDate } = useMemo(() => {
+  // Format date to datetime-local input format (YYYY-MM-DDTHH:mm)
+  const formatDateTimeLocal = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  const { minDateStr, maxDateStr } = useMemo(() => {
     const now = new Date();
     const min = new Date(now);
     min.setMinutes(0, 0, 0);
@@ -38,10 +46,19 @@ export default function WeatherPanel() {
     max.setDate(max.getDate() + 7);
 
     return {
-      minDate: min,
-      maxDate: max,
+      minDateStr: formatDateTimeLocal(min),
+      maxDateStr: formatDateTimeLocal(max),
     };
   }, []);
+
+  const handleDateTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value) {
+      setRaceDateTime(new Date(value));
+    } else {
+      setRaceDateTime(null);
+    }
+  };
 
   useEffect(() => {
     if (!data || data.points.length < 2) {
@@ -170,25 +187,19 @@ export default function WeatherPanel() {
           <label className="block text-xs font-medium text-blue-800 dark:text-blue-300 uppercase tracking-wide mb-2">
             🏁 Race Date & Time
           </label>
-          <div className="flex gap-2 items-center">
-            <DatePicker
-              selected={raceDateTime}
-              calendarStartDay={1}
-              onChange={(date: Date | null) => setRaceDateTime(date)}
-              showTimeSelect
-              timeFormat="HH:mm"
-              timeIntervals={60}
-              timeCaption="Time"
-              dateFormat="EEE, MMM d, HH:mm"
-              minDate={minDate}
-              maxDate={maxDate}
-              placeholderText="Select date & time"
-              className="flex-1 px-3 py-2 border border-blue-200 dark:border-blue-700 rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm w-full"
+          <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+            <input
+              type="datetime-local"
+              value={raceDateTime ? formatDateTimeLocal(raceDateTime) : ""}
+              onChange={handleDateTimeChange}
+              min={minDateStr}
+              max={maxDateStr}
+              className="flex-1 px-3 py-2 border border-blue-200 dark:border-blue-700 rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm w-full [color-scheme:light] dark:[color-scheme:dark]"
             />
             {raceDateTime && (
               <button
                 onClick={clearRaceTime}
-                className="px-3 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-md transition-colors"
+                className="px-3 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-md transition-colors whitespace-nowrap"
               >
                 Clear
               </button>

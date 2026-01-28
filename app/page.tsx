@@ -10,6 +10,7 @@ import StatsPanel from "@/components/StatsPanel";
 import ClimbsList from "@/components/ClimbsList";
 import WeatherPanel from "@/components/WeatherPanel";
 import RouteSelector from "@/components/RouteSelector";
+import ThemeMenu from "@/components/ThemeMenu";
 
 function GPXAnalyzerContent() {
   const { data, loading, error, clearData } = useGPX();
@@ -128,7 +129,7 @@ function GPXAnalyzerContent() {
   return (
     <div className="flex h-screen w-full flex-col bg-zinc-50 dark:bg-zinc-900 overflow-hidden">
       {/* Header */}
-      <header className="flex items-center border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-4 sm:px-6 py-3 sm:py-4 shrink-0 gap-2">
+      <header className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-4 sm:px-6 py-3 sm:py-4 shrink-0 gap-2">
         <button 
           onClick={clearData}
           className="shrink-0 transition-opacity hover:opacity-70 cursor-pointer"
@@ -138,9 +139,13 @@ function GPXAnalyzerContent() {
             Velo<span className="text-sky-500">Wind</span>Lab
           </h1>
         </button>
-        <RouteSelector />
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {/* Mobile sidebar toggle */}
+        
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <RouteSelector />
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <ThemeMenu />
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="lg:hidden rounded-lg bg-zinc-100 dark:bg-zinc-800 p-2 text-zinc-700 dark:text-zinc-300 transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-700 cursor-pointer"
@@ -207,14 +212,14 @@ function GPXAnalyzerContent() {
             w-[320px] sm:w-[360px] lg:w-[380px] 
             border-l border-zinc-200 dark:border-zinc-800 
             bg-white dark:bg-zinc-950 
-            overflow-y-auto
+            flex flex-col
             transform transition-transform duration-300 ease-in-out
             ${sidebarOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"}
             lg:transform-none
           `}
         >
           {/* Mobile close button */}
-          <div className="lg:hidden flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-4 py-3">
+          <div className="lg:hidden flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-4 py-3 shrink-0">
             <span className="font-semibold text-zinc-900 dark:text-zinc-100">
               Route Stats
             </span>
@@ -238,11 +243,22 @@ function GPXAnalyzerContent() {
               </svg>
             </button>
           </div>
-          <div className="p-4 sm:p-6 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
             <StatsPanel />
             <ClimbsList />
             <WeatherPanel />
           </div>
+          <footer className="shrink-0 px-4 sm:px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 text-center text-sm text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-950">
+            Made with &lt;3 by{" "}
+            <a
+              href="https://github.com/sindrehaugsvaer"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sky-600 dark:text-sky-400 hover:underline"
+            >
+              Sindre
+            </a>
+          </footer>
         </aside>
       </div>
     </div>
