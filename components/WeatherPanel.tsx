@@ -20,6 +20,7 @@ export default function WeatherPanel() {
     setRaceWeather,
     setRouteWindData,
     userSpeed,
+    lapCount,
   } = useGPX();
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [raceTimeWeather, setRaceTimeWeatherState] =
@@ -116,7 +117,13 @@ export default function WeatherPanel() {
             startPoint.longitude,
             raceDateTime,
           ),
-          fetchRouteWindData(data.points, raceDateTime, userSpeed),
+          fetchRouteWindData(
+            data.points,
+            raceDateTime,
+            userSpeed,
+            lapCount,
+            data.stats.totalDistance
+          ),
         ]);
 
         setRaceTimeWeatherState(raceWeatherData);
@@ -143,7 +150,7 @@ export default function WeatherPanel() {
     };
 
     fetchRaceWeather();
-  }, [data, raceDateTime, setRaceWeather, setRouteWindData, userSpeed]);
+  }, [data, raceDateTime, setRaceWeather, setRouteWindData, userSpeed, lapCount]);
 
   const clearRaceTime = () => {
     setRaceDateTime(null);

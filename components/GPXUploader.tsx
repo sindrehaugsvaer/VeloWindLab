@@ -138,9 +138,7 @@ export default function GPXUploader() {
             Drag and drop your GPX file here, or click to browse
           </p>
 
-          <p className="mt-1 text-[11px] text-zinc-400 dark:text-zinc-500">
-            Supports GPX 1.0/1.1 with elevation data
-          </p>
+          
         </div>
       </div>
 

@@ -22,6 +22,7 @@ function GPXAnalyzerContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [compactMenuOpen, setCompactMenuOpen] = useState(false);
   const [dataSourcesOpen, setDataSourcesOpen] = useState(false);
+  const [pwaTipsOpen, setPwaTipsOpen] = useState(false);
   const [sheetOffset, setSheetOffset] = useState(0);
   const sheetStartYRef = useRef<number | null>(null);
   const sheetOffsetRef = useRef(0);
@@ -110,10 +111,10 @@ function GPXAnalyzerContent() {
             </h1>
             <p className="text-base sm:text-lg text-zinc-600 dark:text-zinc-400 max-[390px]:text-sm">
               Upload your cycling route to generate a detailed, interactive
-              elevation profile, detect and categorize climbs, compute ride
-              statistics such as distance, total ascent/descent, average speed,
-              gradient segments, and get accurate weather and wind forecasts for
-              your planned rides.
+              elevation profile, toggle laps, detect and categorize climbs,
+              compute ride statistics such as distance, time, total
+              ascent/descent, gradient segments, and get accurate weather and
+              wind forecasts for your planned rides.
             </p>
           </div>
           <GPXUploader />
@@ -125,7 +126,7 @@ function GPXAnalyzerContent() {
         </div>
 
         <footer className="absolute bottom-4 sm:bottom-6 left-0 right-0 z-10 text-center text-[11px] text-zinc-500 dark:text-zinc-400 px-4">
-          <div className="hidden sm:flex flex-wrap items-center justify-center gap-x-2 gap-y-1 leading-tight">
+          <div className="hidden min-[901px]:flex flex-wrap items-center justify-center gap-x-2 gap-y-1 leading-tight">
             <span>
               Wind &amp; weather by{" "}
               <a
@@ -182,14 +183,22 @@ function GPXAnalyzerContent() {
               </a>
             </span>
           </div>
-          <div className="sm:hidden flex items-center justify-center">
-            <div className="flex flex-col items-center gap-1">
-              <button
-                onClick={() => setDataSourcesOpen(true)}
-                className="rounded-full border border-zinc-300/70 dark:border-zinc-700 bg-white/70 dark:bg-zinc-900/70 px-3 py-1 text-[11px] text-zinc-700 dark:text-zinc-300 backdrop-blur"
-              >
-                Data sources
-              </button>
+          <div className="flex min-[901px]:hidden items-center justify-center">
+            <div className="flex flex-col items-center gap-2">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setDataSourcesOpen(true)}
+                  className="rounded-full border border-zinc-300/70 dark:border-zinc-700 bg-white/70 dark:bg-zinc-900/70 px-3 py-1 text-[11px] text-zinc-700 dark:text-zinc-300 backdrop-blur"
+                >
+                  Data sources
+                </button>
+                <button
+                  onClick={() => setPwaTipsOpen(true)}
+                  className="rounded-full border border-zinc-300/70 dark:border-zinc-700 bg-white/70 dark:bg-zinc-900/70 px-3 py-1 text-[11px] text-zinc-700 dark:text-zinc-300 backdrop-blur"
+                >
+                  Add to home screen
+                </button>
+              </div>
               <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
                 Made with &lt;3 by{" "}
                 <a
@@ -205,7 +214,7 @@ function GPXAnalyzerContent() {
           </div>
         </footer>
 
-        <div className="fixed inset-0 z-50 sm:hidden pointer-events-none">
+        <div className="fixed inset-0 z-50 max-[900px]:block hidden pointer-events-none">
           <div
             className={`absolute inset-0 bg-black/40 transition-opacity duration-300 ${dataSourcesOpen ? "opacity-100" : "opacity-0"}`}
             style={{
@@ -218,7 +227,7 @@ function GPXAnalyzerContent() {
             onClick={() => setDataSourcesOpen(false)}
           />
           <div
-            className={`absolute inset-x-0 bottom-0 rounded-t-2xl bg-white dark:bg-zinc-950 p-4 shadow-2xl border-t border-zinc-200 dark:border-zinc-800 transform transition-transform duration-300 ease-out ${dataSourcesOpen ? "translate-y-0" : "translate-y-full"} pointer-events-auto`}
+            className={`absolute inset-x-0 bottom-0 mx-3 rounded-t-2xl rounded-b-none bg-white dark:bg-zinc-950 p-4 shadow-2xl border-t border-x border-zinc-200 dark:border-zinc-800 transform transition-transform duration-300 ease-out ${dataSourcesOpen ? "translate-y-0" : "translate-y-full"} pointer-events-auto`}
             style={{
               transform: `translateY(${dataSourcesOpen ? sheetOffset : 100}%)`,
             }}
@@ -244,7 +253,7 @@ function GPXAnalyzerContent() {
               }
             }}
           >
-            <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+            <div className="mx-auto mb-0.5 h-1.5 w-12 rounded-full bg-zinc-300 dark:bg-zinc-700" />
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                 Data sources
@@ -283,6 +292,47 @@ function GPXAnalyzerContent() {
                   OpenFreeMap
                 </a>
               </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="fixed inset-0 z-50 max-[900px]:block hidden pointer-events-none">
+          <div
+            className={`absolute inset-0 bg-black/40 transition-opacity duration-300 ${pwaTipsOpen ? "opacity-100" : "opacity-0"}`}
+          />
+          <button
+            className={`absolute inset-0 ${pwaTipsOpen ? "pointer-events-auto" : "pointer-events-none"}`}
+            aria-label="Close add to home screen"
+            onClick={() => setPwaTipsOpen(false)}
+          />
+          <div
+            className={`absolute inset-x-0 bottom-0 mx-3 rounded-t-2xl rounded-b-none bg-white dark:bg-zinc-950 p-4 shadow-2xl border-t border-x border-zinc-200 dark:border-zinc-800 transform transition-transform duration-300 ease-out ${pwaTipsOpen ? "translate-y-0" : "translate-y-full"} pointer-events-auto`}
+          >
+            <div className="mx-auto mb-0.5 h-1.5 w-12 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
+              Add to Home Screen
+            </h3>
+            <div className="space-y-3 text-xs text-zinc-600 dark:text-zinc-300">
+              <div>
+                <p className="font-semibold text-zinc-800 dark:text-zinc-200 mb-1">
+                  iOS (Safari)
+                </p>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>Tap the Share button.</li>
+                  <li>Choose “Add to Home Screen”.</li>
+                  <li>Confirm by tapping “Add”.</li>
+                </ol>
+              </div>
+              <div>
+                <p className="font-semibold text-zinc-800 dark:text-zinc-200 mb-1">
+                  Android (Chrome)
+                </p>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>Tap the menu (⋮).</li>
+                  <li>Select “Add to Home screen”.</li>
+                  <li>Confirm by tapping “Add”.</li>
+                </ol>
+              </div>
             </div>
           </div>
         </div>
@@ -403,14 +453,14 @@ function GPXAnalyzerContent() {
         {/* Left: Map + Chart */}
         <div className="flex flex-1 flex-col min-w-0">
           {/* Map - responsive height */}
-          <div className="h-[50%] sm:h-[55%] lg:h-[60%] border-b border-zinc-200 dark:border-zinc-800">
+          <div className="h-[60%] sm:h-[55%] lg:h-[60%] border-b border-zinc-200 dark:border-zinc-800">
             <MapView />
           </div>
 
           {/* Elevation Chart - responsive height */}
           <div
             ref={chartContainerRef}
-            className="h-[50%] sm:h-[45%] lg:h-[40%] relative min-h-[150px]"
+            className="h-[40%] sm:h-[45%] lg:h-[40%] relative min-h-[150px]"
           >
             {chartDimensions.width > 0 && chartDimensions.height > 0 && (
               <ElevationChart

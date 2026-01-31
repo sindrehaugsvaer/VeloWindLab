@@ -1,14 +1,14 @@
-import type { 
-  WeatherLocation, 
-  LocationWeather, 
+import type {
+  WeatherLocation,
+  LocationWeather,
   WeatherData,
   CurrentWeather,
   HourlyForecast,
   DailyForecast,
-  RouteWindPoint
-} from './types';
+  RouteWindPoint,
+} from "./types";
 
-const OPEN_METEO_BASE_URL = 'https://api.open-meteo.com/v1/forecast';
+const OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast";
 
 interface OpenMeteoResponse {
   current?: {
@@ -65,54 +65,60 @@ function formatLocalDate(date: Date): string {
   return local.toISOString().slice(0, 10);
 }
 
-async function fetchLocationWeather(location: WeatherLocation, raceDateTime?: Date): Promise<LocationWeather> {
+async function fetchLocationWeather(
+  location: WeatherLocation,
+  raceDateTime?: Date,
+): Promise<LocationWeather> {
   const forecastDays = raceDateTime ? 7 : 3;
-  
+
   const params = new URLSearchParams({
     latitude: location.latitude.toString(),
     longitude: location.longitude.toString(),
     hourly: [
-      'temperature_2m',
-      'apparent_temperature',
-      'precipitation',
-      'precipitation_probability',
-      'weather_code',
-      'wind_speed_10m',
-      'wind_direction_10m',
-      'relative_humidity_2m',
-      'cloud_cover'
-    ].join(','),
+      "temperature_2m",
+      "apparent_temperature",
+      "precipitation",
+      "precipitation_probability",
+      "weather_code",
+      "wind_speed_10m",
+      "wind_direction_10m",
+      "relative_humidity_2m",
+      "cloud_cover",
+    ].join(","),
     daily: [
-      'temperature_2m_max',
-      'temperature_2m_min',
-      'precipitation_sum',
-      'precipitation_probability_max',
-      'weather_code',
-      'wind_speed_10m_max',
-      'sunrise',
-      'sunset'
-    ].join(','),
-    timezone: 'auto',
-    windspeed_unit: 'ms',
-    forecast_days: forecastDays.toString()
+      "temperature_2m_max",
+      "temperature_2m_min",
+      "precipitation_sum",
+      "precipitation_probability_max",
+      "weather_code",
+      "wind_speed_10m_max",
+      "sunrise",
+      "sunset",
+    ].join(","),
+    timezone: "auto",
+    windspeed_unit: "ms",
+    forecast_days: forecastDays.toString(),
   });
 
   if (!raceDateTime) {
-    params.append('current', [
-      'temperature_2m',
-      'apparent_temperature',
-      'relative_humidity_2m',
-      'wind_speed_10m',
-      'wind_direction_10m',
-      'weather_code',
-      'precipitation',
-      'cloud_cover',
-      'is_day'
-    ].join(','));
+    params.append(
+      "current",
+      [
+        "temperature_2m",
+        "apparent_temperature",
+        "relative_humidity_2m",
+        "wind_speed_10m",
+        "wind_direction_10m",
+        "weather_code",
+        "precipitation",
+        "cloud_cover",
+        "is_day",
+      ].join(","),
+    );
   }
 
   const response = await fetch(`${OPEN_METEO_BASE_URL}?${params}`);
-  
+
   if (!response.ok) {
     throw new Error(`Weather API error: ${response.status}`);
   }
@@ -120,7 +126,7 @@ async function fetchLocationWeather(location: WeatherLocation, raceDateTime?: Da
   const data: OpenMeteoResponse = await response.json();
 
   let current: CurrentWeather;
-  
+
   if (data.current) {
     current = {
       temperature: data.current.temperature_2m,
@@ -159,7 +165,7 @@ async function fetchLocationWeather(location: WeatherLocation, raceDateTime?: Da
   }));
 
   const next24Hours = allHourly
-    .filter(h => new Date(h.time) >= now)
+    .filter((h) => new Date(h.time) >= now)
     .slice(0, 24);
 
   const daily: DailyForecast[] = data.daily.time.map((date, i) => ({
@@ -186,29 +192,29 @@ async function fetchLocationWeather(location: WeatherLocation, raceDateTime?: Da
 export async function fetchRaceTimeWeather(
   latitude: number,
   longitude: number,
-  raceDateTime: Date
+  raceDateTime: Date,
 ): Promise<RaceTimeWeather | null> {
   const params = new URLSearchParams({
     latitude: latitude.toString(),
     longitude: longitude.toString(),
     hourly: [
-      'temperature_2m',
-      'apparent_temperature',
-      'precipitation',
-      'precipitation_probability',
-      'weather_code',
-      'wind_speed_10m',
-      'wind_direction_10m',
-      'relative_humidity_2m',
-      'cloud_cover'
-    ].join(','),
-    timezone: 'auto',
-    windspeed_unit: 'ms',
-    forecast_days: '7'
+      "temperature_2m",
+      "apparent_temperature",
+      "precipitation",
+      "precipitation_probability",
+      "weather_code",
+      "wind_speed_10m",
+      "wind_direction_10m",
+      "relative_humidity_2m",
+      "cloud_cover",
+    ].join(","),
+    timezone: "auto",
+    windspeed_unit: "ms",
+    forecast_days: "7",
   });
 
   const response = await fetch(`${OPEN_METEO_BASE_URL}?${params}`);
-  
+
   if (!response.ok) {
     throw new Error(`Weather API error: ${response.status}`);
   }
@@ -217,10 +223,10 @@ export async function fetchRaceTimeWeather(
 
   const raceHour = raceDateTime.getHours();
   const raceDateStr = formatLocalDate(raceDateTime);
-  
-  const matchingIndex = data.hourly.time.findIndex(time => {
+
+  const matchingIndex = data.hourly.time.findIndex((time) => {
     const hourDate = new Date(time);
-    const hourDateStr = time.split('T')[0];
+    const hourDateStr = time.split("T")[0];
     return hourDateStr === raceDateStr && hourDate.getHours() === raceHour;
   });
 
@@ -237,7 +243,8 @@ export async function fetchRaceTimeWeather(
     windDirection: data.hourly.wind_direction_10m[matchingIndex],
     weatherCode: data.hourly.weather_code[matchingIndex],
     precipitation: data.hourly.precipitation[matchingIndex],
-    precipitationProbability: data.hourly.precipitation_probability[matchingIndex],
+    precipitationProbability:
+      data.hourly.precipitation_probability[matchingIndex],
     cloudCover: data.hourly.cloud_cover[matchingIndex],
   };
 }
@@ -248,16 +255,18 @@ export async function fetchWeatherForRoute(
   endLat: number,
   endLon: number,
   isLoop: boolean,
-  raceDateTime?: Date
+  raceDateTime?: Date,
 ): Promise<WeatherData> {
   const locations: WeatherLocation[] = isLoop
-    ? [{ latitude: startLat, longitude: startLon, label: 'Start/Finish' }]
+    ? [{ latitude: startLat, longitude: startLon, label: "Start/Finish" }]
     : [
-        { latitude: startLat, longitude: startLon, label: 'Start' },
-        { latitude: endLat, longitude: endLon, label: 'Finish' },
+        { latitude: startLat, longitude: startLon, label: "Start" },
+        { latitude: endLat, longitude: endLon, label: "Finish" },
       ];
 
-  const weatherPromises = locations.map(loc => fetchLocationWeather(loc, raceDateTime));
+  const weatherPromises = locations.map((loc) =>
+    fetchLocationWeather(loc, raceDateTime),
+  );
   const locationWeathers = await Promise.all(weatherPromises);
 
   return {
@@ -272,10 +281,10 @@ interface RoutePoint {
   distance: number;
 }
 
-const WIND_SAMPLE_INTERVAL_METERS = 5000;
+const WIND_SAMPLE_INTERVAL_METERS = 8000;
 
 export function sampleRoutePoints(
-  points: Array<{ latitude: number; longitude: number; distance: number }>
+  points: Array<{ latitude: number; longitude: number; distance: number }>,
 ): RoutePoint[] {
   if (points.length === 0) return [];
 
@@ -311,7 +320,7 @@ interface OpenMeteoHourlyWindResponse {
 function getPointDateTime(
   raceDateTime: Date,
   distanceMeters: number,
-  avgSpeedKmh: number
+  avgSpeedKmh: number,
 ): Date {
   const speedMps = (avgSpeedKmh * 1000) / 3600;
   if (!Number.isFinite(speedMps) || speedMps <= 0) return raceDateTime;
@@ -321,15 +330,16 @@ function getPointDateTime(
 
 async function fetchWindForPoint(
   point: RoutePoint,
-  pointDateTime: Date
+  pointDateTime: Date,
 ): Promise<RouteWindPoint | null> {
   const params = new URLSearchParams({
     latitude: point.latitude.toString(),
     longitude: point.longitude.toString(),
-    hourly: 'wind_speed_10m,wind_gusts_10m,wind_direction_10m,temperature_2m,weather_code',
-    timezone: 'auto',
-    windspeed_unit: 'ms',
-    forecast_days: '7'
+    hourly:
+      "wind_speed_10m,wind_gusts_10m,wind_direction_10m,temperature_2m,weather_code",
+    timezone: "auto",
+    windspeed_unit: "ms",
+    forecast_days: "7",
   });
 
   try {
@@ -341,9 +351,9 @@ async function fetchWindForPoint(
     const raceHour = pointDateTime.getHours();
     const raceDateStr = formatLocalDate(pointDateTime);
 
-    const matchingIndex = data.hourly.time.findIndex(time => {
+    const matchingIndex = data.hourly.time.findIndex((time) => {
       const hourDate = new Date(time);
-      const hourDateStr = time.split('T')[0];
+      const hourDateStr = time.split("T")[0];
       return hourDateStr === raceDateStr && hourDate.getHours() === raceHour;
     });
 
@@ -368,15 +378,29 @@ async function fetchWindForPoint(
 export async function fetchRouteWindData(
   points: Array<{ latitude: number; longitude: number; distance: number }>,
   raceDateTime: Date,
-  avgSpeedKmh: number
+  avgSpeedKmh: number,
+  lapCount: number,
+  lapDistance: number,
 ): Promise<RouteWindPoint[]> {
   const sampledPoints = sampleRoutePoints(points);
+  const laps = Math.max(1, Math.floor(lapCount));
 
-  const windPromises = sampledPoints.map(point => {
-    const pointDateTime = getPointDateTime(raceDateTime, point.distance, avgSpeedKmh);
-    return fetchWindForPoint(point, pointDateTime);
-  });
+  const windPromises: Array<Promise<RouteWindPoint | null>> = [];
+  for (let lapIndex = 0; lapIndex < laps; lapIndex++) {
+    const offset = lapDistance * lapIndex;
+    for (const point of sampledPoints) {
+      const pointDistance = point.distance + offset;
+      const pointDateTime = getPointDateTime(
+        raceDateTime,
+        pointDistance,
+        avgSpeedKmh,
+      );
+      windPromises.push(
+        fetchWindForPoint({ ...point, distance: pointDistance }, pointDateTime),
+      );
+    }
+  }
+
   const results = await Promise.all(windPromises);
-
   return results.filter((r): r is RouteWindPoint => r !== null);
 }

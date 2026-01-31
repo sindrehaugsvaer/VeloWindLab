@@ -45,14 +45,15 @@ interface ElevationChartProps {
 
 export default function ElevationChart({ width, height }: ElevationChartProps) {
   const isMobile = width < 640;
+  const showBrush = width >= 640;
   const margin = useMemo(
     () => ({
       top: 18,
       right: isMobile ? 34 : 60,
-      bottom: isMobile ? 32 : 40,
+      bottom: showBrush ? (isMobile ? 32 : 40) : isMobile ? 52 : 40,
       left: isMobile ? 36 : 60,
     }),
-    [isMobile]
+    [isMobile, showBrush],
   );
   const brushMargin = useMemo(
     () => ({
@@ -61,7 +62,7 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
       left: isMobile ? 36 : 60,
       right: isMobile ? 34 : 60,
     }),
-    [isMobile]
+    [isMobile],
   );
   const { data, setHoverPoint, routeWindData, selectedClimbIndex, lapCount } =
     useGPX();
@@ -116,8 +117,9 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
     return result;
   }, [data, lapCount]);
 
-  const brushHeight = 60;
-  const topChartHeight = height - brushHeight - chartSeparation;
+  const brushHeight = showBrush ? (height >= 360 ? 60 : 40) : 0;
+  const separation = showBrush ? (height >= 360 ? chartSeparation : 16) : 0;
+  const topChartHeight = height - brushHeight - separation;
   const xMax = width - margin.left - margin.right;
   const yMax = topChartHeight - margin.top - margin.bottom;
 
@@ -148,7 +150,7 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
       domain: [minElev - padding, maxElev + padding],
       range: [brushHeight - brushMargin.top - brushMargin.bottom, 0],
     });
-  }, [data, lappedPoints, brushHeight]);
+  }, [data, lappedPoints, brushHeight, brushMargin]);
 
   const onBrushChange = useCallback(
     (domain: Bounds | null) => {
@@ -376,6 +378,7 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
       yScale,
       showTooltip,
       setHoverPoint,
+      margin,
     ],
   );
 
@@ -468,8 +471,10 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
                 strokeWidth={2}
                 curve={curveMonotoneX}
               />
-              {windSamples.map((sample) => (
-                <g key={`wind-sample-${sample.distance}`}>
+              {windSamples.map((sample, index) => (
+                <g
+                  key={`wind-sample-${sample.distance}-${sample.time.getTime()}-${index}`}
+                >
                   <circle
                     cx={xScale(sample.distance)}
                     cy={windYScale(sample.windSpeed)}
@@ -598,38 +603,40 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
           toOpacity={0.4}
         />
 
-        <Group
-          left={brushMargin.left}
-          top={topChartHeight + chartSeparation + brushMargin.top}
-        >
-          <AreaClosed<EnhancedPoint>
-            data={lappedPoints}
-            x={(d) => brushXScale(d.distance)}
-            y={(d) => brushYScale(d.elevation ?? 0)}
-            yScale={brushYScale}
-            strokeWidth={1}
-            stroke="#3b82f6"
-            fill={`url(#${GRADIENT_ID})`}
-            curve={curveMonotoneX}
-          />
+        {showBrush && (
+          <Group
+            left={brushMargin.left}
+            top={topChartHeight + separation + brushMargin.top}
+          >
+            <AreaClosed<EnhancedPoint>
+              data={lappedPoints}
+              x={(d) => brushXScale(d.distance)}
+              y={(d) => brushYScale(d.elevation ?? 0)}
+              yScale={brushYScale}
+              strokeWidth={1}
+              stroke="#3b82f6"
+              fill={`url(#${GRADIENT_ID})`}
+              curve={curveMonotoneX}
+            />
 
-          <Brush
-            xScale={brushXScale}
-            yScale={brushYScale}
-            width={xMax}
-            height={brushHeight - brushMargin.top - brushMargin.bottom}
-            margin={brushMargin}
-            handleSize={8}
-            innerRef={brushRef}
-            resizeTriggerAreas={["left", "right"]}
-            brushDirection="horizontal"
-            initialBrushPosition={initialBrushPosition}
-            onChange={onBrushChange}
-            onClick={() => setFilteredData(null)}
-            selectedBoxStyle={selectedBrushStyle}
-            useWindowMoveEvents
-          />
-        </Group>
+            <Brush
+              xScale={brushXScale}
+              yScale={brushYScale}
+              width={xMax}
+              height={brushHeight - brushMargin.top - brushMargin.bottom}
+              margin={brushMargin}
+              handleSize={8}
+              innerRef={brushRef}
+              resizeTriggerAreas={["left", "right"]}
+              brushDirection="horizontal"
+              initialBrushPosition={initialBrushPosition}
+              onChange={onBrushChange}
+              onClick={() => setFilteredData(null)}
+              selectedBoxStyle={selectedBrushStyle}
+              useWindowMoveEvents
+            />
+          </Group>
+        )}
       </svg>
 
       {segmentStats && (
