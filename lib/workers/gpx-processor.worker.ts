@@ -8,7 +8,7 @@ import {
 } from '../calculations/distance';
 import { detectClimbs } from '../calculations/climbs';
 import { simplifyWithElevation, adaptiveTolerance } from '../calculations/simplify';
-import type { GPXData, SmoothingLevel, SMOOTHING_CONFIG } from '../gpx/types';
+import type { GPXData, SmoothingLevel } from '../gpx/types';
 import { SMOOTHING_CONFIG as SMOOTHING_THRESHOLDS } from '../gpx/types';
 
 interface WorkerInput {

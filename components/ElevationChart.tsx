@@ -1,45 +1,41 @@
-'use client';
+"use client";
 
-import { useMemo, useCallback, useState, useRef } from 'react';
-import { AreaClosed, Line, Bar, LinePath } from '@visx/shape';
-import { curveMonotoneX } from '@visx/curve';
-import { GridRows } from '@visx/grid';
-import { scaleLinear } from '@visx/scale';
-import { useTooltip, TooltipWithBounds, defaultStyles } from '@visx/tooltip';
-import { localPoint } from '@visx/event';
-import { bisector } from 'd3-array';
-import { LinearGradient } from '@visx/gradient';
-import { Group } from '@visx/group';
-import { AxisBottom, AxisLeft, AxisRight } from '@visx/axis';
-import { Brush } from '@visx/brush';
-import { PatternLines } from '@visx/pattern';
-import type { BrushHandleRenderProps } from '@visx/brush/lib/BrushHandle';
-import BaseBrush, { BaseBrushState, UpdateBrush } from '@visx/brush/lib/BaseBrush';
-import { Bounds } from '@visx/brush/lib/types';
-import { useGPX } from '@/context/GPXContext';
-import type { EnhancedPoint, SegmentStats, Climb } from '@/lib/gpx/types';
-import type { RouteWindPoint } from '@/lib/weather/types';
-import { getClimbCategoryColor } from '@/lib/calculations/climbs';
+import { useMemo, useCallback, useState, useRef } from "react";
+import { AreaClosed, Line, Bar, LinePath } from "@visx/shape";
+import { curveMonotoneX } from "@visx/curve";
+import { GridRows } from "@visx/grid";
+import { scaleLinear } from "@visx/scale";
+import { useTooltip, TooltipWithBounds, defaultStyles } from "@visx/tooltip";
+import { localPoint } from "@visx/event";
+import { bisector } from "d3-array";
+import { LinearGradient } from "@visx/gradient";
+import { Group } from "@visx/group";
+import { AxisBottom, AxisLeft, AxisRight } from "@visx/axis";
+import { Brush } from "@visx/brush";
+import { PatternLines } from "@visx/pattern";
+import BaseBrush from "@visx/brush/lib/BaseBrush";
+import { Bounds } from "@visx/brush/lib/types";
+import { useGPX } from "@/context/GPXContext";
+import type { EnhancedPoint, SegmentStats, Climb } from "@/lib/gpx/types";
+import { getClimbCategoryColor } from "@/lib/calculations/climbs";
 
-const margin = { top: 20, right: 60, bottom: 40, left: 60 };
-const brushMargin = { top: 10, bottom: 15, left: 60, right: 60 };
 const chartSeparation = 30;
-const PATTERN_ID = 'brush_pattern';
-const GRADIENT_ID = 'brush_gradient';
+const PATTERN_ID = "brush_pattern";
+const GRADIENT_ID = "brush_gradient";
 const selectedBrushStyle = {
   fill: `url(#${PATTERN_ID})`,
-  stroke: 'white',
+  stroke: "white",
 };
 
-const bisectDistance = bisector<EnhancedPoint, number>(d => d.distance).left;
+const bisectDistance = bisector<EnhancedPoint, number>((d) => d.distance).left;
 
 const tooltipStyles = {
   ...defaultStyles,
-  background: 'rgba(0, 0, 0, 0.9)',
-  color: 'white',
-  padding: '8px 12px',
-  borderRadius: '4px',
-  fontSize: '12px'
+  background: "rgba(0, 0, 0, 0.9)",
+  color: "white",
+  padding: "8px 12px",
+  borderRadius: "4px",
+  fontSize: "12px",
 };
 
 interface ElevationChartProps {
@@ -48,27 +44,44 @@ interface ElevationChartProps {
 }
 
 export default function ElevationChart({ width, height }: ElevationChartProps) {
-  const { data, setHoverPoint, routeWindData, selectedClimbIndex, lapCount } = useGPX();
+  const isMobile = width < 640;
+  const margin = useMemo(
+    () => ({
+      top: 18,
+      right: isMobile ? 34 : 60,
+      bottom: isMobile ? 32 : 40,
+      left: isMobile ? 36 : 60,
+    }),
+    [isMobile]
+  );
+  const brushMargin = useMemo(
+    () => ({
+      top: 10,
+      bottom: 12,
+      left: isMobile ? 36 : 60,
+      right: isMobile ? 34 : 60,
+    }),
+    [isMobile]
+  );
+  const { data, setHoverPoint, routeWindData, selectedClimbIndex, lapCount } =
+    useGPX();
   const brushRef = useRef<BaseBrush | null>(null);
-  const [filteredData, setFilteredData] = useState<EnhancedPoint[] | null>(null);
+  const [filteredData, setFilteredData] = useState<EnhancedPoint[] | null>(
+    null,
+  );
   const [segmentStats, setSegmentStats] = useState<SegmentStats | null>(null);
   const [hoveredClimb, setHoveredClimb] = useState<Climb | null>(null);
-  
-  const {
-    tooltipData,
-    tooltipLeft,
-    tooltipTop,
-    showTooltip,
-    hideTooltip,
-  } = useTooltip<EnhancedPoint>();
+
+  const { tooltipData, tooltipLeft, tooltipTop, showTooltip, hideTooltip } =
+    useTooltip<EnhancedPoint>();
 
   const lappedPoints = useMemo(() => {
     if (!data) return [];
     if (lapCount <= 1) return data.points;
-    
+
     const singleLapDistance = data.stats.totalDistance;
     const result: EnhancedPoint[] = [];
-    
+
     for (let lap = 0; lap < lapCount; lap++) {
       const offset = lap * singleLapDistance;
       for (const point of data.points) {
@@ -78,17 +91,17 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
         });
       }
     }
-    
+
     return result;
   }, [data, lapCount]);
 
   const lappedClimbs = useMemo(() => {
     if (!data) return [];
     if (lapCount <= 1) return data.climbs;
-    
+
     const singleLapDistance = data.stats.totalDistance;
     const result: Climb[] = [];
-    
+
     for (let lap = 0; lap < lapCount; lap++) {
       const offset = lap * singleLapDistance;
       for (const climb of data.climbs) {
@@ -99,48 +112,43 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
         });
       }
     }
-    
+
     return result;
   }, [data, lapCount]);
 
   const brushHeight = 60;
   const topChartHeight = height - brushHeight - chartSeparation;
-  const topChartBottomMargin = chartSeparation + brushHeight + margin.bottom;
-  
   const xMax = width - margin.left - margin.right;
   const yMax = topChartHeight - margin.top - margin.bottom;
 
-  const brushXScale = useMemo(
-    () => {
-      if (!data) return scaleLinear({ domain: [0, 1], range: [0, xMax] });
-      
-      const maxDistance = Math.max(...lappedPoints.map(p => p.distance));
+  const brushXScale = useMemo(() => {
+    if (!data) return scaleLinear({ domain: [0, 1], range: [0, xMax] });
+
+    const maxDistance = Math.max(...lappedPoints.map((p) => p.distance));
+    return scaleLinear({
+      domain: [0, maxDistance],
+      range: [0, xMax],
+    });
+  }, [data, lappedPoints, xMax]);
+
+  const brushYScale = useMemo(() => {
+    if (!data || !data.hasElevation) {
       return scaleLinear({
-        domain: [0, maxDistance],
-        range: [0, xMax],
-      });
-    },
-    [data, lappedPoints, xMax]
-  );
-
-  const brushYScale = useMemo(
-    () => {
-      if (!data || !data.hasElevation) {
-        return scaleLinear({ domain: [0, 100], range: [brushHeight - brushMargin.top - brushMargin.bottom, 0] });
-      }
-
-      const elevations = lappedPoints.map(p => p.elevation ?? 0);
-      const minElev = Math.min(...elevations);
-      const maxElev = Math.max(...elevations);
-      const padding = (maxElev - minElev) * 0.1 || 10;
-
-      return scaleLinear({
-        domain: [minElev - padding, maxElev + padding],
+        domain: [0, 100],
         range: [brushHeight - brushMargin.top - brushMargin.bottom, 0],
       });
-    },
-    [data, lappedPoints, brushHeight]
-  );
+    }
+
+    const elevations = lappedPoints.map((p) => p.elevation ?? 0);
+    const minElev = Math.min(...elevations);
+    const maxElev = Math.max(...elevations);
+    const padding = (maxElev - minElev) * 0.1 || 10;
+
+    return scaleLinear({
+      domain: [minElev - padding, maxElev + padding],
+      range: [brushHeight - brushMargin.top - brushMargin.bottom, 0],
+    });
+  }, [data, lappedPoints, brushHeight]);
 
   const onBrushChange = useCallback(
     (domain: Bounds | null) => {
@@ -159,15 +167,15 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
       setFilteredData(filtered);
 
       if (filtered.length > 0) {
-        const segElevations = filtered.map(p => p.elevation ?? 0);
+        const segElevations = filtered.map((p) => p.elevation ?? 0);
         const segmentGain = filtered.reduce((sum, p, i) => {
           if (i === 0) return 0;
-          const diff = (p.elevation ?? 0) - (filtered[i-1].elevation ?? 0);
+          const diff = (p.elevation ?? 0) - (filtered[i - 1].elevation ?? 0);
           return sum + (diff > 6 ? diff : 0);
         }, 0);
         const segmentLoss = filtered.reduce((sum, p, i) => {
           if (i === 0) return 0;
-          const diff = (filtered[i-1].elevation ?? 0) - (p.elevation ?? 0);
+          const diff = (filtered[i - 1].elevation ?? 0) - (p.elevation ?? 0);
           return sum + (diff > 6 ? diff : 0);
         }, 0);
 
@@ -187,99 +195,103 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
         setSegmentStats(stats);
       }
     },
-    [data, lappedPoints]
+    [data, lappedPoints],
   );
 
-  const initialBrushPosition = useMemo(
-    () => {
-      if (!data || lappedPoints.length === 0) return undefined;
-      const maxDist = Math.max(...lappedPoints.map(p => p.distance));
-      return {
-        start: { x: maxDist * 0.25 },
-        end: { x: maxDist * 0.75 },
-      };
-    },
-    [data, lappedPoints]
-  );
+  const initialBrushPosition = useMemo(() => {
+    if (!data || lappedPoints.length === 0) return undefined;
+    const maxDist = Math.max(...lappedPoints.map((p) => p.distance));
+    return {
+      start: { x: maxDist * 0.25 },
+      end: { x: maxDist * 0.75 },
+    };
+  }, [data, lappedPoints]);
 
   const displayData = filteredData || lappedPoints;
 
-  const yScale = useMemo(
-    () => {
-      if (!data || !data.hasElevation) {
-        return scaleLinear({ domain: [0, 100], range: [yMax, 0] });
-      }
+  const yScale = useMemo(() => {
+    if (!data || !data.hasElevation) {
+      return scaleLinear({ domain: [0, 100], range: [yMax, 0] });
+    }
 
-      const elevations = displayData.map(p => p.elevation ?? 0);
-      const minElev = Math.min(...elevations);
-      const maxElev = Math.max(...elevations);
-      const padding = (maxElev - minElev) * 0.1 || 10;
+    const elevations = displayData.map((p) => p.elevation ?? 0);
+    const minElev = Math.min(...elevations);
+    const maxElev = Math.max(...elevations);
+    const padding = (maxElev - minElev) * 0.1 || 10;
 
+    return scaleLinear({
+      domain: [minElev - padding, maxElev + padding],
+      range: [yMax, 0],
+    });
+  }, [displayData, yMax, data]);
+
+  const xScale = useMemo(() => {
+    if (!data) return scaleLinear({ domain: [0, 1], range: [0, xMax] });
+
+    if (filteredData && filteredData.length > 0) {
+      const minDist = Math.min(...filteredData.map((p) => p.distance));
+      const maxDist = Math.max(...filteredData.map((p) => p.distance));
       return scaleLinear({
-        domain: [minElev - padding, maxElev + padding],
-        range: [yMax, 0],
-      });
-    },
-    [displayData, yMax, data]
-  );
-
-  const xScale = useMemo(
-    () => {
-      if (!data) return scaleLinear({ domain: [0, 1], range: [0, xMax] });
-      
-      if (filteredData && filteredData.length > 0) {
-        const minDist = Math.min(...filteredData.map(p => p.distance));
-        const maxDist = Math.max(...filteredData.map(p => p.distance));
-        return scaleLinear({
-          domain: [minDist, maxDist],
-          range: [0, xMax],
-        });
-      }
-
-      const maxDistance = Math.max(...lappedPoints.map(p => p.distance));
-      return scaleLinear({
-        domain: [0, maxDistance],
+        domain: [minDist, maxDist],
         range: [0, xMax],
       });
-    },
-    [data, filteredData, lappedPoints, xMax]
-  );
+    }
 
-  const windYScale = useMemo(
-    () => {
-      if (routeWindData.length === 0) {
-        return scaleLinear({ domain: [0, 15], range: [yMax, 0] });
-      }
+    const maxDistance = Math.max(...lappedPoints.map((p) => p.distance));
+    return scaleLinear({
+      domain: [0, maxDistance],
+      range: [0, xMax],
+    });
+  }, [data, filteredData, lappedPoints, xMax]);
 
-      const maxWind = Math.max(
-        ...routeWindData.map(w => Math.max(w.windSpeed, w.windGust))
-      ) / 3.6; // Convert km/h to m/s
-      const paddedMax = Math.ceil(maxWind / 5) * 5 + 2;
+  const windYScale = useMemo(() => {
+    if (routeWindData.length === 0) {
+      return scaleLinear({ domain: [0, 15], range: [yMax, 0] });
+    }
 
-      return scaleLinear({
-        domain: [0, paddedMax],
-        range: [yMax, 0],
-      });
-    },
-    [routeWindData, yMax]
-  );
+    const maxWind = Math.max(
+      ...routeWindData.map((w) => Math.max(w.windSpeed, w.windGust)),
+    );
+    const paddedMax = Math.ceil(maxWind / 5) * 5 + 2;
+
+    return scaleLinear({
+      domain: [0, paddedMax],
+      range: [yMax, 0],
+    });
+  }, [routeWindData, yMax]);
+
+  const windSamples = useMemo(() => {
+    return [...routeWindData].sort((a, b) => a.distance - b.distance);
+  }, [routeWindData]);
 
   const interpolatedWindData = useMemo(() => {
-    if (routeWindData.length < 2 || !data) return [];
+    if (windSamples.length < 2 || !data) return [];
 
-    const result: Array<{ distance: number; windSpeed: number; windGust: number }> = [];
-    const sortedWind = [...routeWindData].sort((a, b) => a.distance - b.distance);
+    const result: Array<{
+      distance: number;
+      windSpeed: number;
+      windGust: number;
+    }> = [];
+    const sortedWind = windSamples;
 
     for (const point of displayData) {
       const d = point.distance;
 
       if (d <= sortedWind[0].distance) {
-        result.push({ distance: d, windSpeed: sortedWind[0].windSpeed, windGust: sortedWind[0].windGust });
+        result.push({
+          distance: d,
+          windSpeed: sortedWind[0].windSpeed,
+          windGust: sortedWind[0].windGust,
+        });
         continue;
       }
       if (d >= sortedWind[sortedWind.length - 1].distance) {
         const last = sortedWind[sortedWind.length - 1];
-        result.push({ distance: d, windSpeed: last.windSpeed, windGust: last.windGust });
+        result.push({
+          distance: d,
+          windSpeed: last.windSpeed,
+          windGust: last.windGust,
+        });
         continue;
       }
 
@@ -300,24 +312,33 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
     }
 
     return result;
-  }, [routeWindData, displayData, data]);
+  }, [windSamples, displayData, data]);
 
-  const getWindAtDistance = useCallback((distance: number) => {
-    if (interpolatedWindData.length === 0) return null;
+  const getWindAtDistance = useCallback(
+    (distance: number) => {
+      if (windSamples.length === 0) return null;
 
-    const bisectDist = bisector<{ distance: number }, number>(d => d.distance).left;
-    const index = bisectDist(interpolatedWindData, distance, 1);
-    const d0 = interpolatedWindData[index - 1];
-    const d1 = interpolatedWindData[index];
+      const bisectDist = bisector<{ distance: number }, number>(
+        (d) => d.distance,
+      ).left;
+      const index = bisectDist(windSamples, distance, 1);
+      const d0 = windSamples[index - 1];
+      const d1 = windSamples[index];
 
-    if (!d0) return d1 || null;
-    if (!d1) return d0;
+      if (!d0) return d1 || null;
+      if (!d1) return d0;
 
-    return distance - d0.distance > d1.distance - distance ? d1 : d0;
-  }, [interpolatedWindData]);
+      return distance - d0.distance > d1.distance - distance ? d1 : d0;
+    },
+    [windSamples],
+  );
 
   const handleTooltip = useCallback(
-    (event: React.TouchEvent<SVGRectElement> | React.MouseEvent<SVGRectElement>) => {
+    (
+      event:
+        | React.TouchEvent<SVGRectElement>
+        | React.MouseEvent<SVGRectElement>,
+    ) => {
       if (!data || lappedPoints.length === 0) return;
 
       const point = localPoint(event);
@@ -327,14 +348,15 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
       const index = bisectDistance(lappedPoints, x0, 1);
       const d0 = lappedPoints[index - 1];
       const d1 = lappedPoints[index];
-      
+
       if (!d0 || !d1) return;
 
       const d = x0 - d0.distance > d1.distance - x0 ? d1 : d0;
       const actualIndex = lappedPoints.indexOf(d);
 
       const currentClimb = lappedClimbs.find(
-        climb => d.distance >= climb.startDistance && d.distance <= climb.endDistance
+        (climb) =>
+          d.distance >= climb.startDistance && d.distance <= climb.endDistance,
       );
       setHoveredClimb(currentClimb || null);
 
@@ -346,7 +368,15 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
 
       setHoverPoint(d, actualIndex);
     },
-    [data, lappedPoints, lappedClimbs, xScale, yScale, showTooltip, setHoverPoint]
+    [
+      data,
+      lappedPoints,
+      lappedClimbs,
+      xScale,
+      yScale,
+      showTooltip,
+      setHoverPoint,
+    ],
   );
 
   const handleMouseLeave = useCallback(() => {
@@ -358,7 +388,9 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
   if (!data || !data.hasElevation) {
     return (
       <div className="flex items-center justify-center h-full text-gray-400">
-        {data ? 'No elevation data available' : 'Upload a GPX file to see elevation profile'}
+        {data
+          ? "No elevation data available"
+          : "Upload a GPX file to see elevation profile"}
       </div>
     );
   }
@@ -366,8 +398,13 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
   return (
     <div className="relative">
       <svg width={width} height={height}>
-        <LinearGradient id="area-gradient" from="#3b82f6" to="#3b82f6" toOpacity={0.2} />
-        
+        <LinearGradient
+          id="area-gradient"
+          from="#3b82f6"
+          to="#3b82f6"
+          toOpacity={0.2}
+        />
+
         <Group left={margin.left} top={margin.top}>
           <GridRows
             scale={yScale}
@@ -381,9 +418,9 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
             const x2 = xScale(climb.endDistance);
             const climbWidth = x2 - x1;
             if (climbWidth <= 0) return null;
-            
+
             const isSelected = selectedClimbIndex === i;
-            
+
             return (
               <rect
                 key={`climb-${i}`}
@@ -391,9 +428,11 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
                 y={0}
                 width={climbWidth}
                 height={yMax}
-                fill={isSelected ? '#f59e0b' : getClimbCategoryColor(climb.category)}
+                fill={
+                  isSelected ? "#f59e0b" : getClimbCategoryColor(climb.category)
+                }
                 fillOpacity={isSelected ? 0.4 : 0.15}
-                stroke={isSelected ? '#f59e0b' : 'none'}
+                stroke={isSelected ? "#f59e0b" : "none"}
                 strokeWidth={isSelected ? 2 : 0}
               />
             );
@@ -401,8 +440,8 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
 
           <AreaClosed<EnhancedPoint>
             data={displayData}
-            x={d => xScale(d.distance)}
-            y={d => yScale(d.elevation ?? 0)}
+            x={(d) => xScale(d.distance)}
+            y={(d) => yScale(d.elevation ?? 0)}
             yScale={yScale}
             strokeWidth={2}
             stroke="url(#area-gradient)"
@@ -414,8 +453,8 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
             <>
               <LinePath
                 data={interpolatedWindData}
-                x={d => xScale(d.distance)}
-                y={d => windYScale(d.windGust / 3.6)}
+                x={(d) => xScale(d.distance)}
+                y={(d) => windYScale(d.windGust)}
                 stroke="#f472b6"
                 strokeWidth={1.5}
                 strokeOpacity={0.8}
@@ -423,12 +462,32 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
               />
               <LinePath
                 data={interpolatedWindData}
-                x={d => xScale(d.distance)}
-                y={d => windYScale(d.windSpeed / 3.6)}
+                x={(d) => xScale(d.distance)}
+                y={(d) => windYScale(d.windSpeed)}
                 stroke="#2563eb"
                 strokeWidth={2}
                 curve={curveMonotoneX}
               />
+              {windSamples.map((sample) => (
+                <g key={`wind-sample-${sample.distance}`}>
+                  <circle
+                    cx={xScale(sample.distance)}
+                    cy={windYScale(sample.windSpeed)}
+                    r={3}
+                    fill="#2563eb"
+                    stroke="white"
+                    strokeWidth={1}
+                  />
+                  <circle
+                    cx={xScale(sample.distance)}
+                    cy={windYScale(sample.windGust)}
+                    r={3}
+                    fill="#f472b6"
+                    stroke="white"
+                    strokeWidth={1}
+                  />
+                </g>
+              ))}
             </>
           )}
 
@@ -473,13 +532,13 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
             label="Distance (km)"
             labelProps={{
               fontSize: 12,
-              textAnchor: 'middle',
-              fill: '#6b7280',
+              textAnchor: "middle",
+              fill: "#6b7280",
             }}
             tickLabelProps={() => ({
               fontSize: 10,
-              textAnchor: 'middle',
-              fill: '#6b7280',
+              textAnchor: "middle",
+              fill: "#6b7280",
             })}
             tickFormat={(d) => (Number(d) / 1000).toFixed(1)}
           />
@@ -490,13 +549,13 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
             label="Elevation (m)"
             labelProps={{
               fontSize: 12,
-              textAnchor: 'middle',
-              fill: '#6b7280',
+              textAnchor: "middle",
+              fill: "#6b7280",
             }}
             tickLabelProps={() => ({
               fontSize: 10,
-              textAnchor: 'end',
-              fill: '#6b7280',
+              textAnchor: "end",
+              fill: "#6b7280",
               dx: -4,
             })}
             tickFormat={(d) => Math.round(Number(d)).toString()}
@@ -510,13 +569,13 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
               label="Wind (m/s)"
               labelProps={{
                 fontSize: 12,
-                textAnchor: 'middle',
-                fill: '#2563eb',
+                textAnchor: "middle",
+                fill: "#2563eb",
               }}
               tickLabelProps={() => ({
                 fontSize: 10,
-                textAnchor: 'start',
-                fill: '#2563eb',
+                textAnchor: "start",
+                fill: "#2563eb",
                 dx: 4,
               })}
               tickFormat={(d) => Math.round(Number(d)).toString()}
@@ -530,22 +589,30 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
           width={8}
           stroke="#3b82f6"
           strokeWidth={1}
-          orientation={['diagonal']}
+          orientation={["diagonal"]}
         />
-        <LinearGradient id={GRADIENT_ID} from="#3b82f6" to="#3b82f6" toOpacity={0.4} />
+        <LinearGradient
+          id={GRADIENT_ID}
+          from="#3b82f6"
+          to="#3b82f6"
+          toOpacity={0.4}
+        />
 
-        <Group left={brushMargin.left} top={topChartHeight + chartSeparation + brushMargin.top}>
+        <Group
+          left={brushMargin.left}
+          top={topChartHeight + chartSeparation + brushMargin.top}
+        >
           <AreaClosed<EnhancedPoint>
             data={lappedPoints}
-            x={d => brushXScale(d.distance)}
-            y={d => brushYScale(d.elevation ?? 0)}
+            x={(d) => brushXScale(d.distance)}
+            y={(d) => brushYScale(d.elevation ?? 0)}
             yScale={brushYScale}
             strokeWidth={1}
             stroke="#3b82f6"
             fill={`url(#${GRADIENT_ID})`}
             curve={curveMonotoneX}
           />
-          
+
           <Brush
             xScale={brushXScale}
             yScale={brushYScale}
@@ -554,7 +621,7 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
             margin={brushMargin}
             handleSize={8}
             innerRef={brushRef}
-            resizeTriggerAreas={['left', 'right']}
+            resizeTriggerAreas={["left", "right"]}
             brushDirection="horizontal"
             initialBrushPosition={initialBrushPosition}
             onChange={onBrushChange}
@@ -567,9 +634,13 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
 
       {segmentStats && (
         <div className="absolute top-2 right-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-3 text-xs shadow-lg select-none pointer-events-auto">
-          <div className="font-semibold mb-1 text-zinc-900 dark:text-zinc-100">Segment Stats</div>
+          <div className="font-semibold mb-1 text-zinc-900 dark:text-zinc-100">
+            Segment Stats
+          </div>
           <div className="space-y-0.5 text-zinc-600 dark:text-zinc-400">
-            <div>Distance: {(segmentStats.totalDistance / 1000).toFixed(2)} km</div>
+            <div>
+              Distance: {(segmentStats.totalDistance / 1000).toFixed(2)} km
+            </div>
             <div>Gain: {Math.round(segmentStats.totalElevationGain)} m</div>
             <div>Loss: {Math.round(segmentStats.totalElevationLoss)} m</div>
           </div>
@@ -605,8 +676,7 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
 
       {tooltipData && (
         <TooltipWithBounds
-          key={Math.random()}
-          top={tooltipTop}
+          top={tooltipTop! - 50}
           left={tooltipLeft}
           style={tooltipStyles}
         >
@@ -619,11 +689,17 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
             {(() => {
               const wind = getWindAtDistance(tooltipData.distance);
               if (wind) {
+                const timeLabel = wind.time.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
                 return (
                   <div className="mt-2 pt-2 border-t border-gray-600">
-                    <div className="font-semibold text-blue-400">Wind</div>
-                    <div>Speed: {(wind.windSpeed / 3.6).toFixed(1)} m/s</div>
-                    <div>Gust: {(wind.windGust / 3.6).toFixed(1)} m/s</div>
+                    <div className="font-semibold text-blue-400">
+                      Wind <span className="text-gray-300">• {timeLabel}</span>
+                    </div>
+                    <div>Speed: {wind.windSpeed.toFixed(1)} m/s</div>
+                    <div>Gust: {wind.windGust.toFixed(1)} m/s</div>
                   </div>
                 );
               }
@@ -632,7 +708,9 @@ export default function ElevationChart({ width, height }: ElevationChartProps) {
             {hoveredClimb && (
               <div className="mt-2 pt-2 border-t border-gray-600">
                 <div className="font-semibold text-yellow-400">Climb</div>
-                <div>Length: {(hoveredClimb.distance / 1000).toFixed(2)} km</div>
+                <div>
+                  Length: {(hoveredClimb.distance / 1000).toFixed(2)} km
+                </div>
                 <div>Elevation: {Math.round(hoveredClimb.elevationGain)} m</div>
                 <div>Avg: {hoveredClimb.avgGrade.toFixed(1)}%</div>
                 <div>Max: {hoveredClimb.maxGrade.toFixed(1)}%</div>

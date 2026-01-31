@@ -1,6 +1,6 @@
 # VeloWindLab
 
-A production-quality web application for analyzing cycling routes from GPX files. Built with Next.js 15, React 19, TypeScript, and Visx for data visualization.
+A production-quality web application for analyzing cycling routes from GPX files. Built with Next.js 16.1.5, React 19, TypeScript, and Visx for data visualization.
 
 ## Features
 
@@ -11,18 +11,22 @@ A production-quality web application for analyzing cycling routes from GPX files
 - **Climb Detection**: Strava-style climb categorization (HC, 1, 2, 3, 4)
 - **Segment Analysis**: Select portions of the route with brush tool to analyze specific segments
 - **Performance Optimized**: Web Worker processing, Douglas-Peucker simplification for rendering
+- **Weather & Wind Forecasts**: Open-Meteo powered current conditions, race-time forecasts, and route wind sampling
+- **Route Library**: Save multiple routes locally and switch between them
+- **Theme Toggle**: Light, dark, or system theme selection
 - **Dark Mode Support**: Adapts to system preferences
 
 ## Tech Stack
 
-- **Framework**: Next.js 15 (App Router) + React 19
+- **Framework**: Next.js 16.1.5 (App Router) + React 19
 - **Language**: TypeScript
 - **Mapping**: MapLibre GL + react-map-gl + OpenFreeMap
 - **Charts**: Visx (composable low-level visualization primitives)
 - **GPX Parsing**: @we-gold/gpxjs
 - **Geospatial**: @turf/distance for Haversine calculations
-- **Simplification**: simplify-ts (Douglas-Peucker algorithm with 3D elevation)
+- **Simplification**: Douglas-Peucker algorithm with 3D elevation
 - **Styling**: Tailwind CSS
+- **Weather**: Open-Meteo forecast API
 
 ## Getting Started
 
@@ -78,6 +82,7 @@ velowindlab/
 │   └── ClimbsList.tsx        # Detected climbs list
 ├── context/
 │   └── GPXContext.tsx        # React Context for state management
+│   └── ThemeContext.tsx      # Theme mode state (light/dark/system)
 ├── lib/
 │   ├── gpx/
 │   │   ├── types.ts          # TypeScript type definitions
@@ -86,6 +91,9 @@ velowindlab/
 │   │   ├── distance.ts       # Distance, elevation, gradient calculations
 │   │   ├── climbs.ts         # Strava-style climb detection
 │   │   └── simplify.ts       # Douglas-Peucker simplification
+│   ├── weather/
+│   │   ├── api.ts            # Open-Meteo API client
+│   │   └── types.ts          # Weather types + helpers
 │   └── workers/
 │       └── gpx-processor.worker.ts  # Web Worker for processing
 └── public/                   # Static assets
@@ -104,8 +112,9 @@ velowindlab/
    - Elevation gain/loss with vertical threshold filtering (6m default)
    - Time/speed statistics with stop detection
 5. **Climb Detection**: Identify segments ≥3% grade, ≥300m distance
-6. **Simplification**: Douglas-Peucker algorithm reduces points for map rendering
-7. **Rendering**: Context updates, components re-render with new data
+6. **Weather & Wind**: Current conditions or race-time forecast, plus route wind samples
+7. **Simplification**: Douglas-Peucker algorithm reduces points for map rendering
+8. **Rendering**: Context updates, components re-render with new data
 
 ### Key Algorithms
 
@@ -147,12 +156,17 @@ export const SMOOTHING_CONFIG = {
 ### Climb Detection
 
 ```typescript
-export const CALCULATION_CONFIG = {
-  CLIMB_MIN_GRADE: 3.0,        // percentage
-  CLIMB_MIN_DISTANCE: 300,     // meters
-  CLIMB_END_GRADE: 2.0,        // percentage
-  GRADE_WINDOW_SIZE: 10,       // points
-};
+// lib/calculations/climbs.ts
+const CLIMB_MIN_GRADE = 3.0;    // percentage
+const CLIMB_MIN_DISTANCE = 300; // meters
+const CLIMB_END_GRADE = 2.0;    // percentage
+```
+
+### Weather & Wind
+
+```typescript
+// lib/weather/api.ts
+const OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1/forecast";
 ```
 
 ## Deployment

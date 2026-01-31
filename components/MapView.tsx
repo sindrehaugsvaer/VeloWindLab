@@ -20,6 +20,12 @@ export default function MapView() {
   const { data, hoverState, routeWindData } = useGPX();
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+    accuracy?: number;
+  } | null>(null);
+  const watchIdRef = useRef<number | null>(null);
   const [viewState, setViewState] = useState({
     longitude: -100,
     latitude: 40,
@@ -51,6 +57,30 @@ export default function MapView() {
 
   const handleMapLoad = useCallback(() => {
     setMapLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!('geolocation' in navigator)) return;
+
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        setUserLocation({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy
+        });
+      },
+      () => {
+        setUserLocation(null);
+      },
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
+    );
+
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
   }, []);
 
   const gradientSegments = data ? data.points.slice(0, -1).map((point, i) => {
@@ -169,6 +199,16 @@ export default function MapView() {
             </div>
           </Marker>
         )}
+
+        {userLocation && (
+          <Marker
+            longitude={userLocation.longitude}
+            latitude={userLocation.latitude}
+            anchor="center"
+          >
+            <div className="location-dot" />
+          </Marker>
+        )}
       </Map>
 
       {routeWindData.length > 0 && <WindLegend windData={routeWindData} />}
@@ -232,11 +272,11 @@ function WindLegend({ windData }: { windData: RouteWindPoint[] }) {
           <div className="px-3 pb-2 space-y-1 text-xs text-gray-600 dark:text-gray-400">
             <div className="flex justify-between gap-4">
               <span>Avg Speed:</span>
-              <span className="font-medium text-gray-900 dark:text-gray-100">{(avgSpeed / 3.6).toFixed(1)} m/s</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">{avgSpeed.toFixed(1)} m/s</span>
             </div>
             <div className="flex justify-between gap-4">
               <span>Max Gust:</span>
-              <span className="font-medium text-gray-900 dark:text-gray-100">{(maxGust / 3.6).toFixed(1)} m/s</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">{maxGust.toFixed(1)} m/s</span>
             </div>
             <div className="flex justify-between gap-4">
               <span>Samples:</span>

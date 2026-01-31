@@ -3,7 +3,7 @@
 import { useTheme } from "@/context/ThemeContext";
 import { useState, useRef, useEffect } from "react";
 
-export default function ThemeMenu() {
+export default function ThemeMenu({ compact = false }: { compact?: boolean }) {
   const { themeMode, setThemeMode } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -26,7 +26,7 @@ export default function ThemeMenu() {
       mode: "light" as const,
       label: "Light",
       icon: (
-        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -40,7 +40,7 @@ export default function ThemeMenu() {
       mode: "dark" as const,
       label: "Dark",
       icon: (
-        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -54,7 +54,7 @@ export default function ThemeMenu() {
       mode: "system" as const,
       label: "System",
       icon: (
-        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -68,11 +68,30 @@ export default function ThemeMenu() {
 
   const currentOption = options.find((opt) => opt.mode === themeMode) || options[2];
 
+  if (compact) {
+    const toggleMode = () => {
+      const next =
+        themeMode === "light" ? "dark" : themeMode === "dark" ? "system" : "light";
+      setThemeMode(next);
+    };
+
+    return (
+      <button
+        onClick={toggleMode}
+        className="rounded-lg bg-zinc-100 dark:bg-zinc-800 p-2 text-zinc-700 dark:text-zinc-300 transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-700 cursor-pointer h-10 w-10 flex items-center justify-center"
+        aria-label={`Theme: ${currentOption.label}`}
+        title={`Theme: ${currentOption.label}`}
+      >
+        {currentOption.icon}
+      </button>
+    );
+  }
+
   return (
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="rounded-lg bg-zinc-100 dark:bg-zinc-800 p-2 text-zinc-700 dark:text-zinc-300 transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-700 cursor-pointer"
+        className="rounded-lg bg-zinc-100 dark:bg-zinc-800 p-2 text-zinc-700 dark:text-zinc-300 transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-700 cursor-pointer h-10 w-10 flex items-center justify-center"
         aria-label="Theme settings"
         title={`Theme: ${currentOption.label}`}
       >

@@ -20,6 +20,11 @@ function GPXAnalyzerContent() {
     height: 0,
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [compactMenuOpen, setCompactMenuOpen] = useState(false);
+  const [dataSourcesOpen, setDataSourcesOpen] = useState(false);
+  const [sheetOffset, setSheetOffset] = useState(0);
+  const sheetStartYRef = useRef<number | null>(null);
+  const sheetOffsetRef = useRef(0);
 
   useEffect(() => {
     const container = chartContainerRef.current;
@@ -46,10 +51,19 @@ function GPXAnalyzerContent() {
       if (window.innerWidth >= 1024) {
         setSidebarOpen(false);
       }
+      if (window.innerWidth > 390) {
+        setCompactMenuOpen(false);
+      }
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    if (dataSourcesOpen) return;
+    setSheetOffset(0);
+    sheetOffsetRef.current = 0;
+  }, [dataSourcesOpen]);
 
   // Loading state
   if (loading) {
@@ -87,19 +101,19 @@ function GPXAnalyzerContent() {
                 alt="VeloWindLab"
                 width={160}
                 height={160}
-                className="h-28 sm:h-40 w-auto drop-shadow-md rounded-2xl"
+                className="h-24 sm:h-40 w-auto drop-shadow-md rounded-2xl max-[390px]:h-20"
                 priority
               />
             </div>
-            <h1 className="text-2xl sm:text-4xl font-bold text-zinc-900 dark:text-zinc-50 mb-1 sm:mb-2">
+            <h1 className="text-2xl sm:text-4xl font-bold text-zinc-900 dark:text-zinc-50 mb-1 sm:mb-2 max-[390px]:text-xl">
               Velo<span className="text-sky-500">Wind</span>Lab
             </h1>
-            <p className="text-base sm:text-lg text-zinc-600 dark:text-zinc-400">
+            <p className="text-base sm:text-lg text-zinc-600 dark:text-zinc-400 max-[390px]:text-sm">
               Upload your cycling route to generate a detailed, interactive
-              elevation profile, detect and categorize climbs, compute
-              comprehensive ride statistics such as distance, total
-              ascent/descent, average and moving speed, gradient segments, and
-              get accurate weather and wind forecasts for your planned rides.
+              elevation profile, detect and categorize climbs, compute ride
+              statistics such as distance, total ascent/descent, average speed,
+              gradient segments, and get accurate weather and wind forecasts for
+              your planned rides.
             </p>
           </div>
           <GPXUploader />
@@ -110,17 +124,168 @@ function GPXAnalyzerContent() {
           )}
         </div>
 
-        <footer className="absolute bottom-6 left-0 right-0 z-10 text-center text-sm text-zinc-500 dark:text-zinc-400">
-          Made with &lt;3 by{" "}
-          <a
-            href="https://github.com/sindrehaugsvaer"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sky-600 dark:text-sky-400 hover:underline"
-          >
-            Sindre
-          </a>
+        <footer className="absolute bottom-4 sm:bottom-6 left-0 right-0 z-10 text-center text-[11px] text-zinc-500 dark:text-zinc-400 px-4">
+          <div className="hidden sm:flex flex-wrap items-center justify-center gap-x-2 gap-y-1 leading-tight">
+            <span>
+              Wind &amp; weather by{" "}
+              <a
+                href="https://open-meteo.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sky-600 dark:text-sky-400 hover:underline"
+              >
+                Open-Meteo
+              </a>{" "}
+              (
+              <a
+                href="https://open-meteo.com/en/docs#license"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sky-600 dark:text-sky-400 hover:underline"
+              >
+                CC BY 4.0
+              </a>
+              )
+            </span>
+            <span
+              aria-hidden="true"
+              className="text-zinc-400/60 hidden sm:inline"
+            >
+              •
+            </span>
+            <span>
+              Maps by{" "}
+              <a
+                href="https://openfreemap.org/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sky-600 dark:text-sky-400 hover:underline"
+              >
+                OpenFreeMap
+              </a>
+            </span>
+            <span
+              aria-hidden="true"
+              className="text-zinc-400/60 hidden sm:inline"
+            >
+              •
+            </span>
+            <span>
+              Made with &lt;3 by{" "}
+              <a
+                href="https://github.com/sindrehaugsvaer"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sky-600 dark:text-sky-400 hover:underline"
+              >
+                Sindre
+              </a>
+            </span>
+          </div>
+          <div className="sm:hidden flex items-center justify-center">
+            <div className="flex flex-col items-center gap-1">
+              <button
+                onClick={() => setDataSourcesOpen(true)}
+                className="rounded-full border border-zinc-300/70 dark:border-zinc-700 bg-white/70 dark:bg-zinc-900/70 px-3 py-1 text-[11px] text-zinc-700 dark:text-zinc-300 backdrop-blur"
+              >
+                Data sources
+              </button>
+              <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                Made with &lt;3 by{" "}
+                <a
+                  href="https://github.com/sindrehaugsvaer"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sky-600 dark:text-sky-400 hover:underline"
+                >
+                  Sindre
+                </a>
+              </span>
+            </div>
+          </div>
         </footer>
+
+        <div className="fixed inset-0 z-50 sm:hidden pointer-events-none">
+          <div
+            className={`absolute inset-0 bg-black/40 transition-opacity duration-300 ${dataSourcesOpen ? "opacity-100" : "opacity-0"}`}
+            style={{
+              opacity: dataSourcesOpen ? Math.max(0, 1 - sheetOffset / 60) : 0,
+            }}
+          />
+          <button
+            className={`absolute inset-0 ${dataSourcesOpen ? "pointer-events-auto" : "pointer-events-none"}`}
+            aria-label="Close data sources"
+            onClick={() => setDataSourcesOpen(false)}
+          />
+          <div
+            className={`absolute inset-x-0 bottom-0 rounded-t-2xl bg-white dark:bg-zinc-950 p-4 shadow-2xl border-t border-zinc-200 dark:border-zinc-800 transform transition-transform duration-300 ease-out ${dataSourcesOpen ? "translate-y-0" : "translate-y-full"} pointer-events-auto`}
+            style={{
+              transform: `translateY(${dataSourcesOpen ? sheetOffset : 100}%)`,
+            }}
+            onTouchStart={(e) => {
+              if (!dataSourcesOpen) return;
+              sheetStartYRef.current = e.touches[0]?.clientY ?? null;
+            }}
+            onTouchMove={(e) => {
+              if (!dataSourcesOpen || sheetStartYRef.current === null) return;
+              const currentY = e.touches[0]?.clientY ?? sheetStartYRef.current;
+              const delta = Math.max(0, currentY - sheetStartYRef.current);
+              const percent = Math.min(60, (delta / window.innerHeight) * 100);
+              sheetOffsetRef.current = percent;
+              setSheetOffset(percent);
+            }}
+            onTouchEnd={() => {
+              if (!dataSourcesOpen) return;
+              if (sheetOffsetRef.current > 20) {
+                setDataSourcesOpen(false);
+              } else {
+                setSheetOffset(0);
+                sheetOffsetRef.current = 0;
+              }
+            }}
+          >
+            <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                Data sources
+              </h3>
+            </div>
+            <div className="space-y-2 text-xs text-zinc-600 dark:text-zinc-300">
+              <p>
+                Weather & Wind:{" "}
+                <a
+                  href="https://open-meteo.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sky-600 dark:text-sky-400 hover:underline"
+                >
+                  Open-Meteo
+                </a>{" "}
+                (
+                <a
+                  href="https://open-meteo.com/en/docs#license"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sky-600 dark:text-sky-400 hover:underline"
+                >
+                  CC BY 4.0
+                </a>
+                )
+              </p>
+              <p>
+                Maps:{" "}
+                <a
+                  href="https://openfreemap.org/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sky-600 dark:text-sky-400 hover:underline"
+                >
+                  OpenFreeMap
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -130,7 +295,7 @@ function GPXAnalyzerContent() {
     <div className="flex h-screen w-full flex-col bg-zinc-50 dark:bg-zinc-900 overflow-hidden">
       {/* Header */}
       <header className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-4 sm:px-6 py-3 sm:py-4 shrink-0 gap-2">
-        <button 
+        <button
           onClick={clearData}
           className="shrink-0 transition-opacity hover:opacity-70 cursor-pointer"
           title="Back to upload screen"
@@ -139,32 +304,91 @@ function GPXAnalyzerContent() {
             Velo<span className="text-sky-500">Wind</span>Lab
           </h1>
         </button>
-        
+
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <RouteSelector />
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <ThemeMenu />
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden rounded-lg bg-zinc-100 dark:bg-zinc-800 p-2 text-zinc-700 dark:text-zinc-300 transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-700 cursor-pointer"
-            aria-label="Toggle stats panel"
-          >
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        <div className="flex items-center gap-2 shrink-0 relative">
+          <div className="max-[390px]:hidden flex items-center gap-2">
+            <ThemeMenu />
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="lg:hidden rounded-lg bg-zinc-100 dark:bg-zinc-800 p-2 text-zinc-700 dark:text-zinc-300 transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-700 cursor-pointer h-10 w-10 flex items-center justify-center"
+              aria-label="Toggle stats panel"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-              />
-            </svg>
-          </button>
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
+            </button>
+          </div>
+          <div className="hidden max-[390px]:block relative">
+            <button
+              onClick={() => setCompactMenuOpen(!compactMenuOpen)}
+              className="h-10 w-10 flex items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-700"
+              aria-label="Open menu"
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+            {compactMenuOpen && (
+              <>
+                <button
+                  className="fixed inset-0 z-40"
+                  aria-label="Close menu"
+                  onClick={() => setCompactMenuOpen(false)}
+                />
+                <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-lg p-2">
+                  <div className="flex flex-col items-center gap-2">
+                    <ThemeMenu compact />
+                    <button
+                      onClick={() => {
+                        setSidebarOpen(!sidebarOpen);
+                        setCompactMenuOpen(false);
+                      }}
+                      className="rounded-lg bg-zinc-100 dark:bg-zinc-800 p-2 text-zinc-700 dark:text-zinc-300 transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-700 cursor-pointer h-10 w-10 flex items-center justify-center"
+                      aria-label="Toggle stats panel"
+                    >
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
           <button
             onClick={clearData}
             className="rounded-lg bg-zinc-900 dark:bg-zinc-100 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white dark:text-zinc-900 transition-colors hover:bg-zinc-700 dark:hover:bg-zinc-300 whitespace-nowrap cursor-pointer"
@@ -248,7 +472,7 @@ function GPXAnalyzerContent() {
             <ClimbsList />
             <WeatherPanel />
           </div>
-          <footer className="shrink-0 px-4 sm:px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 text-center text-sm text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-950">
+          <footer className="shrink-0 px-4 sm:px-6 py-2 border-t border-zinc-100 dark:border-zinc-800 text-center text-sm text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-950">
             Made with &lt;3 by{" "}
             <a
               href="https://github.com/sindrehaugsvaer"

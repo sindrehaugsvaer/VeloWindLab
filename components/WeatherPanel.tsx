@@ -19,6 +19,7 @@ export default function WeatherPanel() {
     setRaceDateTime,
     setRaceWeather,
     setRouteWindData,
+    userSpeed,
   } = useGPX();
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [raceTimeWeather, setRaceTimeWeatherState] =
@@ -115,7 +116,7 @@ export default function WeatherPanel() {
             startPoint.longitude,
             raceDateTime,
           ),
-          fetchRouteWindData(data.points, raceDateTime),
+          fetchRouteWindData(data.points, raceDateTime, userSpeed),
         ]);
 
         setRaceTimeWeatherState(raceWeatherData);
@@ -142,7 +143,7 @@ export default function WeatherPanel() {
     };
 
     fetchRaceWeather();
-  }, [data, raceDateTime, setRaceWeather, setRouteWindData]);
+  }, [data, raceDateTime, setRaceWeather, setRouteWindData, userSpeed]);
 
   const clearRaceTime = () => {
     setRaceDateTime(null);
@@ -234,6 +235,27 @@ export default function WeatherPanel() {
               showDivider={index < weather.locations.length - 1}
             />
           ))}
+        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+          Wind and weather data powered by{" "}
+          <a
+            href="https://open-meteo.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sky-600 dark:text-sky-400 hover:underline"
+          >
+            Open-Meteo
+          </a>{" "}
+          (
+          <a
+            href="https://open-meteo.com/en/docs#license"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sky-600 dark:text-sky-400 hover:underline"
+          >
+            CC BY 4.0
+          </a>
+          ).
+        </p>
       </div>
     </Accordion>
   );
@@ -263,9 +285,9 @@ function RaceWeatherCard({
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-4 text-white">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 text-zinc-700 dark:text-zinc-200">
         <div className="flex items-center gap-2">
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-700 dark:border-zinc-700 dark:border-t-zinc-200"></div>
           <span className="text-sm">Updating forecast...</span>
         </div>
       </div>
@@ -273,13 +295,13 @@ function RaceWeatherCard({
   }
 
   return (
-    <div className="bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 rounded-lg p-4 text-white">
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 text-zinc-900 dark:text-zinc-100 shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-3xl">{weatherInfo.icon}</span>
           <div>
             <h3 className="font-semibold">Race Forecast</h3>
-            <p className="text-sm text-blue-100">
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
               {formatDateTime(raceDateTime)}
             </p>
           </div>
@@ -288,41 +310,41 @@ function RaceWeatherCard({
           <div className="text-4xl font-bold">
             {Math.round(weather.temperature)}°C
           </div>
-          <div className="text-sm text-blue-100">
+          <div className="text-sm text-zinc-500 dark:text-zinc-400">
             Feels {Math.round(weather.apparentTemperature)}°C
           </div>
         </div>
       </div>
 
-      <div className="text-sm text-blue-100 mb-3">
+      <div className="text-sm text-zinc-600 dark:text-zinc-300 mb-3">
         {weatherInfo.description}
       </div>
 
       <div className="grid grid-cols-2 gap-3 text-sm">
-        <div className="bg-white/10 rounded-lg p-2">
-          <div className="text-blue-200 text-xs">Wind</div>
-          <div className="font-semibold flex items-center gap-1">
+        <div className="bg-zinc-50 dark:bg-zinc-800 rounded-lg p-2 border border-zinc-200/60 dark:border-zinc-700/60">
+          <div className="text-zinc-500 dark:text-zinc-400 text-xs">Wind</div>
+          <div className="font-semibold flex items-center gap-1 text-zinc-900 dark:text-zinc-100">
             <WindArrow
               direction={weather.windDirection}
               size={16}
-              color="white"
+              color="currentColor"
             />
-            {(weather.windSpeed / 3.6).toFixed(1)} m/s {windDir}
+            {weather.windSpeed.toFixed(1)} m/s {windDir}
           </div>
         </div>
-        <div className="bg-white/10 rounded-lg p-2">
-          <div className="text-blue-200 text-xs">Precipitation</div>
-          <div className="font-semibold">
+        <div className="bg-zinc-50 dark:bg-zinc-800 rounded-lg p-2 border border-zinc-200/60 dark:border-zinc-700/60">
+          <div className="text-zinc-500 dark:text-zinc-400 text-xs">Precipitation</div>
+          <div className="font-semibold text-zinc-900 dark:text-zinc-100">
             {weather.precipitationProbability}% chance
           </div>
         </div>
-        <div className="bg-white/10 rounded-lg p-2">
-          <div className="text-blue-200 text-xs">Humidity</div>
-          <div className="font-semibold">{weather.humidity}%</div>
+        <div className="bg-zinc-50 dark:bg-zinc-800 rounded-lg p-2 border border-zinc-200/60 dark:border-zinc-700/60">
+          <div className="text-zinc-500 dark:text-zinc-400 text-xs">Humidity</div>
+          <div className="font-semibold text-zinc-900 dark:text-zinc-100">{weather.humidity}%</div>
         </div>
-        <div className="bg-white/10 rounded-lg p-2">
-          <div className="text-blue-200 text-xs">Cloud Cover</div>
-          <div className="font-semibold">{weather.cloudCover}%</div>
+        <div className="bg-zinc-50 dark:bg-zinc-800 rounded-lg p-2 border border-zinc-200/60 dark:border-zinc-700/60">
+          <div className="text-zinc-500 dark:text-zinc-400 text-xs">Cloud Cover</div>
+          <div className="font-semibold text-zinc-900 dark:text-zinc-100">{weather.cloudCover}%</div>
         </div>
       </div>
     </div>
@@ -412,7 +434,7 @@ function LocationWeatherCard({
           <div className="flex justify-between">
             <span className="text-gray-500 dark:text-gray-400">Wind</span>
             <span className="text-gray-900 dark:text-gray-100">
-              {(current.windSpeed / 3.6).toFixed(1)} m/s {windDir}
+              {current.windSpeed.toFixed(1)} m/s {windDir}
             </span>
           </div>
           <div className="flex justify-between">

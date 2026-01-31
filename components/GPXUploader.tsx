@@ -79,7 +79,7 @@ export default function GPXUploader() {
         type: "application/gpx+xml",
       });
       await handleFile(file);
-    } catch (err) {
+    } catch {
       const fallback = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="GPX Analyzer Demo">\n  <trk>\n    <name>Sample Cycling Route</name>\n    <trkseg>\n      <trkpt lat="37.8000" lon="-122.4200"><ele>10</ele></trkpt>\n      <trkpt lat="37.8010" lon="-122.4190"><ele>15</ele></trkpt>\n      <trkpt lat="37.8020" lon="-122.4180"><ele>25</ele></trkpt>\n      <trkpt lat="37.8030" lon="-122.4170"><ele>40</ele></trkpt>\n      <trkpt lat="37.8040" lon="-122.4160"><ele>60</ele></trkpt>\n      <trkpt lat="37.8050" lon="-122.4150"><ele>85</ele></trkpt>\n    </trkseg>\n  </trk>\n</gpx>`;
       const blob = new Blob([fallback], { type: "application/gpx+xml" });
       const file = new File([blob], "sample-route-fallback.gpx", {
@@ -90,13 +90,13 @@ export default function GPXUploader() {
   }, [handleFile]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[400px] p-8">
+    <div className="flex flex-col items-center justify-center min-h-[220px] max-[390px]:min-h-[180px] sm:min-h-[400px] p-4 sm:p-8">
       <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         className={`
-          relative w-full max-w-2xl p-12 border-2 border-dashed rounded-xl
+          relative w-full max-w-2xl p-8 max-[390px]:p-5 border-2 border-dashed rounded-xl
           transition-all duration-200 cursor-pointer backdrop-blur-sm
           ${
             dragActive
@@ -116,7 +116,7 @@ export default function GPXUploader() {
 
         <div className="text-center">
           <svg
-            className="mx-auto h-12 w-12 text-zinc-400 dark:text-zinc-500"
+            className="mx-auto h-10 w-10 max-[390px]:h-8 max-[390px]:w-8 text-zinc-400 dark:text-zinc-500"
             stroke="currentColor"
             fill="none"
             viewBox="0 0 48 48"
@@ -130,26 +130,26 @@ export default function GPXUploader() {
             />
           </svg>
 
-          <h3 className="mt-4 text-lg font-medium text-zinc-900 dark:text-zinc-100">
+          <h3 className="mt-3 text-base max-[390px]:text-sm font-medium text-zinc-900 dark:text-zinc-100">
             {loading ? "Processing GPX file..." : "Upload GPX file"}
           </h3>
 
-          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mt-1 text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
             Drag and drop your GPX file here, or click to browse
           </p>
 
-          <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
+          <p className="mt-1 text-[11px] text-zinc-400 dark:text-zinc-500">
             Supports GPX 1.0/1.1 with elevation data
           </p>
         </div>
       </div>
 
-      <div className="flex gap-3 mt-6">
+      <div className="flex gap-3 mt-4 max-[390px]:mt-3">
         {savedRoutes.length > 0 && (
           <button
             onClick={handleLoadSavedRoute}
             disabled={loading}
-            className="px-6 py-2 text-sm font-medium text-white dark:text-zinc-900
+            className="px-5 py-2 text-xs sm:text-sm font-medium text-white dark:text-zinc-900
                        bg-sky-600 dark:bg-sky-400 hover:bg-sky-700 dark:hover:bg-sky-300
                        rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
@@ -160,7 +160,7 @@ export default function GPXUploader() {
           <button
             onClick={handleSampleLoad}
             disabled={loading}
-            className="px-6 py-2 text-sm font-medium text-sky-600 dark:text-sky-400 
+            className="px-5 py-2 text-xs sm:text-sm font-medium text-sky-600 dark:text-sky-400 
                        hover:text-sky-700 dark:hover:text-sky-300
                        border border-sky-600 dark:border-sky-500 
                        hover:border-sky-700 dark:hover:border-sky-400 rounded-lg
@@ -172,7 +172,7 @@ export default function GPXUploader() {
         )}
       </div>
 
-      <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400 max-w-2xl text-center">
+      <p className="mt-2 text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 max-w-2xl text-center leading-relaxed sm:leading-normal">
         All processing runs locally in your browser for privacy and
         responsiveness. Use the built-in sample route to explore features like
         segment selection and route simplification for smooth map rendering.

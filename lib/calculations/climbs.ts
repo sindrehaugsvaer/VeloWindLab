@@ -1,8 +1,9 @@
-import type { EnhancedPoint, Climb, CALCULATION_CONFIG } from '../gpx/types';
+import type { EnhancedPoint, Climb } from '../gpx/types';
+import { CALCULATION_CONFIG as CONFIG } from '../gpx/types';
 
-const CLIMB_MIN_GRADE = 3.0;
-const CLIMB_MIN_DISTANCE = 300;
-const CLIMB_END_GRADE = 2.0;
+const CLIMB_MIN_GRADE = CONFIG.CLIMB_MIN_GRADE;
+const CLIMB_MIN_DISTANCE = CONFIG.CLIMB_MIN_DISTANCE;
+const CLIMB_END_GRADE = CONFIG.CLIMB_END_GRADE;
 
 function categorizeClimb(distance: number, avgGrade: number): Climb['category'] {
   const score = distance * avgGrade;

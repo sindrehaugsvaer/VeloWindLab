@@ -111,21 +111,6 @@ export interface HoverState {
   index: number | null;
 }
 
-// Worker message types for type-safe communication
-export interface WorkerRequest {
-  type: 'PARSE_GPX';
-  payload: {
-    gpxString: string;
-    fileName: string;
-    smoothingLevel: SmoothingLevel;
-  };
-}
-
-export interface WorkerResponse {
-  type: 'PARSE_SUCCESS' | 'PARSE_ERROR';
-  payload: GPXData | { error: string };
-}
-
 // GeoJSON types for map rendering
 export interface GeoJSONLineString {
   type: 'Feature';

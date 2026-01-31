@@ -14,12 +14,18 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 function getSystemTheme(): ResolvedTheme {
+  if (typeof window === "undefined") {
+    return "light";
+  }
   return window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
 }
 
 function applyTheme(theme: ResolvedTheme) {
+  if (typeof document === "undefined") {
+    return;
+  }
   if (theme === "dark") {
     document.documentElement.classList.add("dark");
   } else {
@@ -29,16 +35,15 @@ function applyTheme(theme: ResolvedTheme) {
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [themeMode, setThemeModeState] = useState<ThemeMode>("system");
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>("dark");
-  const [mounted, setMounted] = useState(false);
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>("light");
 
   useEffect(() => {
-    setMounted(true);
     const savedMode = localStorage.getItem("themeMode") as ThemeMode | null;
     const mode = savedMode || "system";
-    setThemeModeState(mode);
-
     const resolved = mode === "system" ? getSystemTheme() : mode;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setThemeModeState(mode);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setResolvedTheme(resolved);
     applyTheme(resolved);
   }, []);
@@ -65,11 +70,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setResolvedTheme(resolved);
     applyTheme(resolved);
   };
-
-  // Prevent flash of wrong theme
-  if (!mounted) {
-    return <>{children}</>;
-  }
 
   return (
     <ThemeContext.Provider value={{ themeMode, resolvedTheme, setThemeMode }}>

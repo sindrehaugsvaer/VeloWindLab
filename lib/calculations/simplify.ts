@@ -1,27 +1,7 @@
-import { SimplifyLL } from 'simplify-ts';
 import type { GPXPoint, SimplifiedPoint } from '../gpx/types';
+import { CALCULATION_CONFIG as CONFIG } from '../gpx/types';
 
-const DEFAULT_TOLERANCE = 0.0001;
-
-export function simplifyForRendering(
-  points: GPXPoint[],
-  tolerance: number = DEFAULT_TOLERANCE
-): SimplifiedPoint[] {
-  if (points.length === 0) return [];
-  
-  const simplePoints = points.map(p => ({
-    latitude: p.latitude,
-    longitude: p.longitude
-  }));
-
-  const simplified = SimplifyLL(simplePoints, tolerance, true);
-
-  return simplified.map(p => ({
-    lat: p.latitude,
-    lon: p.longitude,
-    ele: 0
-  }));
-}
+const DEFAULT_TOLERANCE = CONFIG.SIMPLIFY_TOLERANCE;
 
 export function simplifyWithElevation(
   points: GPXPoint[],

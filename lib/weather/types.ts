@@ -96,6 +96,7 @@ export interface RouteWindPoint {
   latitude: number;
   longitude: number;
   distance: number;
+  time: Date;
   windSpeed: number;
   windGust: number;
   windDirection: number;

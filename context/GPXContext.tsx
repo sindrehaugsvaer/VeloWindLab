@@ -70,7 +70,6 @@ export function GPXProvider({ children }: { children: ReactNode }) {
   const [selectedClimbIndex, setSelectedClimbIndexState] = useState<number | null>(null);
   const [savedRoutes, setSavedRoutes] = useState<SavedRoute[]>([]);
   const [activeRouteId, setActiveRouteId] = useState<string | null>(null);
-  const [storageLoaded, setStorageLoaded] = useState(false);
   const workerRef = useRef<Worker | null>(null);
 
   useEffect(() => {
@@ -78,13 +77,14 @@ export function GPXProvider({ children }: { children: ReactNode }) {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored) as SavedRoute[];
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSavedRoutes(parsed);
       }
     } catch (err) {
       console.error('Failed to load routes from localStorage:', err);
     }
-    setStorageLoaded(true);
   }, []);
+
 
   const persistRoutes = useCallback((routes: SavedRoute[]) => {
     try {
@@ -244,10 +244,6 @@ export function GPXProvider({ children }: { children: ReactNode }) {
     setActiveRouteId(null);
     resetRouteState();
   }, [resetRouteState]);
-
-  if (!storageLoaded) {
-    return null;
-  }
 
   return (
     <GPXContext.Provider

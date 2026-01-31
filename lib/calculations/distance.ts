@@ -1,9 +1,7 @@
 import turfDistance from '@turf/distance';
 import { point } from '@turf/helpers';
-import type { GPXPoint, EnhancedPoint, RouteStats, CALCULATION_CONFIG } from '../gpx/types';
+import type { GPXPoint, EnhancedPoint, RouteStats } from '../gpx/types';
 import { CALCULATION_CONFIG as CONFIG } from '../gpx/types';
-
-const EARTH_RADIUS = 6371000;
 
 export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const from = point([lon1, lat1]);
@@ -89,7 +87,7 @@ export function calculateElevationStats(
 export function calculateRollingGrade(
   points: GPXPoint[],
   distances: number[],
-  windowSize: number = 10
+  windowSize: number = CONFIG.GRADE_WINDOW_SIZE
 ): number[] {
   const grades: number[] = [];
 
@@ -117,7 +115,7 @@ export function calculateRollingGrade(
   return grades;
 }
 
-export function calculateTimeStats(points: GPXPoint[]): {
+export function calculateTimeStats(points: EnhancedPoint[]): {
   totalTime: number | null;
   movingTime: number | null;
   avgSpeed: number | null;
@@ -138,7 +136,7 @@ export function calculateTimeStats(points: GPXPoint[]): {
   const totalTime = (lastTime.getTime() - firstTime.getTime()) / 1000;
   let movingTime = 0;
   let maxSpeed = 0;
-  const STOP_THRESHOLD = 0.5;
+  const stopThreshold = CONFIG.STOP_SPEED_THRESHOLD;
 
   for (let i = 1; i < points.length; i++) {
     const prev = points[i - 1];
@@ -157,7 +155,7 @@ export function calculateTimeStats(points: GPXPoint[]): {
     );
     const speed = dist / timeDiff;
 
-    if (speed > STOP_THRESHOLD) {
+    if (speed > stopThreshold) {
       movingTime += timeDiff;
     }
 
@@ -169,14 +167,7 @@ export function calculateTimeStats(points: GPXPoint[]): {
   return {
     totalTime,
     movingTime,
-    avgSpeed: movingTime > 0 ? 
-      (points[points.length - 1].elevation !== null ? 
-        calculateDistance(
-          points[0].latitude,
-          points[0].longitude,
-          points[points.length - 1].latitude,
-          points[points.length - 1].longitude
-        ) / movingTime : null) : null,
+    avgSpeed: movingTime > 0 ? points[points.length - 1].distance / movingTime : null,
     maxSpeed
   };
 }
