@@ -318,7 +318,9 @@ export function useStravaImport() {
   }, []);
 
   const importRoute = useCallback(
-    async (route: StravaRoute): Promise<{ success: boolean; error?: string }> => {
+    async (
+      route: StravaRoute,
+    ): Promise<{ success: boolean; error?: string }> => {
       try {
         const accessToken = await getValidAccessToken();
         const response = await fetch(

@@ -4,7 +4,10 @@ import { useRef, useState, useCallback } from "react";
 import Image from "next/image";
 import GPXUploader from "@/components/GPXUploader";
 import GPXUploaderActions from "@/components/GPXUploaderActions";
-import StravaConnect, { StravaRoute, useStravaImport } from "@/components/StravaConnect";
+import StravaConnect, {
+  StravaRoute,
+  useStravaImport,
+} from "@/components/StravaConnect";
 
 interface LandingPageProps {
   error: string | null;
@@ -19,7 +22,7 @@ export default function LandingPage({ error }: LandingPageProps) {
   const [sheetOffset, setSheetOffset] = useState(0);
   const sheetStartYRef = useRef<number | null>(null);
   const sheetOffsetRef = useRef(0);
-  
+
   const { importRoute, loading: importLoading } = useStravaImport();
 
   const handleRoutesLoaded = useCallback((routes: StravaRoute[]) => {
@@ -28,15 +31,18 @@ export default function LandingPage({ error }: LandingPageProps) {
     setImportError(null);
   }, []);
 
-  const handleImportRoute = useCallback(async (route: StravaRoute) => {
-    setImportError(null);
-    const result = await importRoute(route);
-    if (!result.success) {
-      setImportError(result.error || "Failed to import route");
-    } else {
-      setStravaRoutesOpen(false);
-    }
-  }, [importRoute]);
+  const handleImportRoute = useCallback(
+    async (route: StravaRoute) => {
+      setImportError(null);
+      const result = await importRoute(route);
+      if (!result.success) {
+        setImportError(result.error || "Failed to import route");
+      } else {
+        setStravaRoutesOpen(false);
+      }
+    },
+    [importRoute],
+  );
 
   const formatDistance = useCallback((meters: number) => {
     const km = meters / 1000;
@@ -72,10 +78,10 @@ export default function LandingPage({ error }: LandingPageProps) {
         </h1>
         <p className="sm:text-base lg:text-base text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">
           Upload your cycling route to generate a detailed, interactive
-          elevation profile, toggle laps, detect and categorize climbs,
-          compute ride statistics such as distance, time, total
-          ascent/descent, gradient segments, and get accurate weather and wind
-          forecasts for your planned rides.
+          elevation profile, toggle laps, detect and categorize climbs, compute
+          ride statistics such as distance, time, total ascent/descent, gradient
+          segments, and get accurate weather and wind forecasts for your planned
+          rides.
         </p>
       </header>
 
@@ -100,9 +106,9 @@ export default function LandingPage({ error }: LandingPageProps) {
             </div>
             <p className="hidden min-[901px]:block text-[13px] sm:text-xs text-zinc-500 dark:text-zinc-400 text-center leading-relaxed sm:leading-normal max-w-lg">
               All processing runs locally in your browser for privacy and
-              responsiveness. Use the built-in sample route to explore
-              features like climb detection, weather forecasts, and
-              interactive elevation profiles.
+              responsiveness. Use the built-in sample route to explore features
+              like climb detection, weather forecasts, and interactive elevation
+              profiles.
             </p>
           </div>
           {error && (
@@ -286,9 +292,9 @@ export default function LandingPage({ error }: LandingPageProps) {
           <div className="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-800">
             <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
               All processing runs locally in your browser for privacy and
-              responsiveness. Use the built-in sample route to explore
-              features like climb detection, weather forecasts, and
-              interactive elevation profiles.
+              responsiveness. Use the built-in sample route to explore features
+              like climb detection, weather forecasts, and interactive elevation
+              profiles.
             </p>
           </div>
         </div>
@@ -355,8 +361,18 @@ export default function LandingPage({ error }: LandingPageProps) {
                 onClick={() => setStravaRoutesOpen(false)}
                 className="text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
