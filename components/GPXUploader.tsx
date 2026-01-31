@@ -4,14 +4,8 @@ import { useCallback, useState } from "react";
 import { useGPX } from "@/context/GPXContext";
 
 export default function GPXUploader() {
-  const { processGPX, loading, savedRoutes, loadRoute } = useGPX();
+  const { processGPX, loading } = useGPX();
   const [dragActive, setDragActive] = useState(false);
-
-  const handleLoadSavedRoute = useCallback(() => {
-    if (savedRoutes.length > 0) {
-      loadRoute(savedRoutes[savedRoutes.length - 1].id);
-    }
-  }, [savedRoutes, loadRoute]);
 
   const handleFile = useCallback(
     async (file: File) => {
@@ -69,35 +63,17 @@ export default function GPXUploader() {
     [handleFile],
   );
 
-  const handleSampleLoad = useCallback(async () => {
-    try {
-      const res = await fetch("/Oslo.gpx");
-      if (!res.ok) throw new Error("Failed to fetch sample GPX");
-      const text = await res.text();
-      const blob = new Blob([text], { type: "application/gpx+xml" });
-      const file = new File([blob], "Oslo.gpx", {
-        type: "application/gpx+xml",
-      });
-      await handleFile(file);
-    } catch {
-      const fallback = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="GPX Analyzer Demo">\n  <trk>\n    <name>Sample Cycling Route</name>\n    <trkseg>\n      <trkpt lat="37.8000" lon="-122.4200"><ele>10</ele></trkpt>\n      <trkpt lat="37.8010" lon="-122.4190"><ele>15</ele></trkpt>\n      <trkpt lat="37.8020" lon="-122.4180"><ele>25</ele></trkpt>\n      <trkpt lat="37.8030" lon="-122.4170"><ele>40</ele></trkpt>\n      <trkpt lat="37.8040" lon="-122.4160"><ele>60</ele></trkpt>\n      <trkpt lat="37.8050" lon="-122.4150"><ele>85</ele></trkpt>\n    </trkseg>\n  </trk>\n</gpx>`;
-      const blob = new Blob([fallback], { type: "application/gpx+xml" });
-      const file = new File([blob], "sample-route-fallback.gpx", {
-        type: "application/gpx+xml",
-      });
-      await handleFile(file);
-    }
-  }, [handleFile]);
-
   return (
-    <div className="flex flex-col items-center justify-center min-h-[220px] max-[390px]:min-h-[180px] sm:min-h-[400px] p-4 sm:p-8">
+    <div className="flex w-full flex-col items-center justify-center">
       <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         className={`
-          relative w-full max-w-2xl p-8 max-[390px]:p-5 border-2 border-dashed rounded-xl
+          relative w-full min-h-[90px] sm:min-h-[120px] lg:min-h-[200px]
+          p-2 sm:p-3 lg:p-5 border-2 border-dashed rounded-xl
           transition-all duration-200 cursor-pointer backdrop-blur-sm
+          flex items-center justify-center
           ${
             dragActive
               ? "border-sky-500 bg-sky-50/80 dark:bg-sky-950/50"
@@ -116,7 +92,7 @@ export default function GPXUploader() {
 
         <div className="text-center">
           <svg
-            className="mx-auto h-10 w-10 max-[390px]:h-8 max-[390px]:w-8 text-zinc-400 dark:text-zinc-500"
+            className="mx-auto h-6 w-6 sm:h-10 sm:w-10 text-zinc-400 dark:text-zinc-500"
             stroke="currentColor"
             fill="none"
             viewBox="0 0 48 48"
@@ -130,51 +106,15 @@ export default function GPXUploader() {
             />
           </svg>
 
-          <h3 className="mt-3 text-base max-[390px]:text-sm font-medium text-zinc-900 dark:text-zinc-100">
+          <h3 className="mt-1 sm:mt-2 text-xs sm:text-base font-medium text-zinc-900 dark:text-zinc-100">
             {loading ? "Processing GPX file..." : "Upload GPX file"}
           </h3>
 
-          <p className="mt-1 text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-sm text-zinc-500 dark:text-zinc-400">
             Drag and drop your GPX file here, or click to browse
           </p>
-
-          
         </div>
       </div>
-
-      <div className="flex gap-3 mt-4 max-[390px]:mt-3">
-        {savedRoutes.length > 0 && (
-          <button
-            onClick={handleLoadSavedRoute}
-            disabled={loading}
-            className="px-5 py-2 text-xs sm:text-sm font-medium text-white dark:text-zinc-900
-                       bg-sky-600 dark:bg-sky-400 hover:bg-sky-700 dark:hover:bg-sky-300
-                       rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-          >
-            View Saved Routes ({savedRoutes.length})
-          </button>
-        )}
-        {!savedRoutes.some(r => r.name.toLowerCase() === "oslo") && (
-          <button
-            onClick={handleSampleLoad}
-            disabled={loading}
-            className="px-5 py-2 text-xs sm:text-sm font-medium text-sky-600 dark:text-sky-400 
-                       hover:text-sky-700 dark:hover:text-sky-300
-                       border border-sky-600 dark:border-sky-500 
-                       hover:border-sky-700 dark:hover:border-sky-400 rounded-lg
-                       transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer
-                       bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm"
-          >
-            Load Sample Route
-          </button>
-        )}
-      </div>
-
-      <p className="mt-2 text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 max-w-2xl text-center leading-relaxed sm:leading-normal">
-        All processing runs locally in your browser for privacy and
-        responsiveness. Use the built-in sample route to explore features like
-        segment selection and route simplification for smooth map rendering.
-      </p>
     </div>
   );
 }

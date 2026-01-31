@@ -15,8 +15,19 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "VeloWindLab",
-  description: "Analyze cycling routes from GPX files with elevation profiles, climb detection, and weather forecasts",
-  keywords: ["GPX", "cycling", "bike", "elevation", "climb", "route", "analyzer", "wind", "weather"],
+  description:
+    "Analyze cycling routes from GPX files with elevation profiles, climb detection, and weather forecasts",
+  keywords: [
+    "GPX",
+    "cycling",
+    "bike",
+    "elevation",
+    "climb",
+    "route",
+    "analyzer",
+    "wind",
+    "weather",
+  ],
   manifest: "/manifest.json",
   icons: {
     icon: "/icon.svg",
@@ -29,10 +40,22 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Inline script to prevent theme flicker on load
+  const themeScript = `
+    (function() {
+      try {
+        var mode = localStorage.getItem('themeMode') || 'system';
+        var isDark = mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (isDark) document.documentElement.classList.add('dark');
+      } catch (e) {}
+    })();
+  `;
+
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
-        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="VeloWindLab" />
       </head>
