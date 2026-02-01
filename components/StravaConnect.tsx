@@ -12,6 +12,8 @@ interface StravaTokens {
   refresh_token: string;
   expires_at: number;
   athlete_id?: number | null;
+  athlete_firstname?: string | null;
+  athlete_lastname?: string | null;
 }
 
 export interface StravaRoute {
@@ -89,6 +91,12 @@ export default function StravaConnect({
   const isAuthenticated = Boolean(
     tokens?.access_token && tokens?.refresh_token,
   );
+  const athleteName = useMemo(() => {
+    const first = tokens?.athlete_firstname?.trim();
+    const last = tokens?.athlete_lastname?.trim();
+    const name = [first, last].filter(Boolean).join(" ");
+    return name || "Strava athlete";
+  }, [tokens?.athlete_firstname, tokens?.athlete_lastname]);
 
   const authorizeUrl = useMemo(() => {
     if (typeof window === "undefined") return "";
@@ -171,6 +179,8 @@ export default function StravaConnect({
       refresh_token: data.refresh_token ?? current.refresh_token,
       expires_at: data.expires_at,
       athlete_id: current.athlete_id ?? null,
+      athlete_firstname: current.athlete_firstname ?? null,
+      athlete_lastname: current.athlete_lastname ?? null,
     };
 
     updateTokens(refreshed);
@@ -201,6 +211,8 @@ export default function StravaConnect({
         ...current,
         access_token: accessToken,
         athlete_id: data.id,
+        athlete_firstname: data.firstname ?? current?.athlete_firstname ?? null,
+        athlete_lastname: data.lastname ?? current?.athlete_lastname ?? null,
       } as StravaTokens;
 
       updateTokens(updated);
@@ -363,13 +375,23 @@ export default function StravaConnect({
           /* STATE 2: While connected */
           <div className="flex flex-col items-center gap-2 sm:gap-3 w-full">
             {/* Powered by Strava logo */}
-            <Image
-              src="/api_logo_pwrdBy_strava_stack_white.svg"
-              alt="Powered by Strava"
-              width={120}
-              height={40}
-              className="h-6 sm:h-8 w-auto invert dark:invert-0"
-            />
+            <div className="flex items-center justify-center gap-3 w-full">
+              <div className="text-right">
+                <p className="text-[9px] sm:text-[10px] uppercase tracking-wide text-zinc-400">
+                  User:
+                </p>
+                <p className="text-[11px] sm:text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                  {athleteName}
+                </p>
+              </div>
+              <Image
+                src="/api_logo_pwrdBy_strava_stack_white.svg"
+                alt="Powered by Strava"
+                width={120}
+                height={40}
+                className="h-6 sm:h-8 w-auto invert dark:invert-0"
+              />
+            </div>
 
             {/* Action buttons */}
             <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">

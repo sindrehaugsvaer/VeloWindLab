@@ -139,6 +139,8 @@ export async function GET(request: Request) {
     refresh_token: tokenData.refresh_token,
     expires_at: tokenData.expires_at,
     athlete_id: tokenData.athlete?.id ?? null,
+    athlete_firstname: tokenData.athlete?.firstname ?? null,
+    athlete_lastname: tokenData.athlete?.lastname ?? null,
   };
 
   const payloadString = htmlEscape(JSON.stringify(payload));
