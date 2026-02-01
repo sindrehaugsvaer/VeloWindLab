@@ -257,7 +257,13 @@ export default function StravaConnect({
     } finally {
       setRoutesLoading(false);
     }
-  }, [ensureAthleteId, getValidAccessToken, mapRouteData, onRoutesLoaded, ROUTES_PER_PAGE]);
+  }, [
+    ensureAthleteId,
+    getValidAccessToken,
+    mapRouteData,
+    onRoutesLoaded,
+    ROUTES_PER_PAGE,
+  ]);
 
   const loadMoreRoutes = useCallback(async () => {
     if (!athleteIdRef.current) return;
@@ -347,7 +353,7 @@ export default function StravaConnect({
 
   return (
     <div className="w-full">
-      <div className="min-h-[90px] sm:min-h-[120px] lg:min-h-[200px] rounded-2xl border border-zinc-200/70 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm p-2 sm:p-3 flex flex-col items-center justify-center">
+      <div className="min-h-[90px] sm:min-h-[120px] lg:min-h-[200px] rounded-2xl border border-zinc-200/70 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm px-2 py-2 sm:px-3 sm:py-4 md:py-5 lg:px-4 lg:py-6 flex flex-col items-center justify-center">
         {authLoading ? (
           /* STATE: While connecting - full box spinner, no border */
           <div className="flex items-center justify-center">
@@ -398,8 +404,9 @@ export default function StravaConnect({
             </div>
 
             {/* Status text */}
-            <p className="text-[10px] sm:text-sm text-zinc-500 dark:text-zinc-400">
-              Connected to Strava.
+            <p className="text-center text-[10px] sm:text-sm text-zinc-500 dark:text-zinc-400">
+              Connected to Strava. Click “Disconnect” to remove VeloWindLab from
+              your Strava account.
             </p>
           </div>
         ) : (

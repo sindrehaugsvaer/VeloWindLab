@@ -172,19 +172,12 @@ export default function LandingPage({ error }: LandingPageProps) {
   );
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 via-zinc-50 to-sky-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-sky-950/30" />
-      <div
-        className="absolute inset-0 opacity-[0.015] dark:opacity-[0.03]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}
-      />
-      <div className="absolute top-1/4 -left-32 w-96 h-96 bg-sky-400/20 dark:bg-sky-500/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-sky-400/20 dark:bg-sky-500/10 rounded-full blur-3xl" />
+    <div className="relative flex min-h-screen min-h-[100svh] w-full flex-col overflow-hidden">
+      <div className="absolute inset-0 landing-bg" />
+      <div className="absolute inset-0 landing-noise" />
 
       {/* Header - sticky top */}
-      <header className="relative z-10 shrink-0 pt-4 sm:pt-6 pb-2 sm:pb-4 px-4 sm:px-8 text-center">
+      <header className="relative z-10 shrink-0 pt-4 pb-2 px-4 sm:px-8 text-center">
         <div className="mb-1.5 sm:mb-3 flex justify-center">
           <Image
             src="/logo.png"
@@ -210,14 +203,14 @@ export default function LandingPage({ error }: LandingPageProps) {
       {/* Main content - centered */}
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-8 py-2 sm:py-4">
         <div className="w-full max-w-6xl">
-          <div className="grid w-full grid-cols-1 gap-1.5 sm:gap-3 lg:grid-cols-2 lg:items-start">
+          <div className="grid w-full grid-cols-1 gap-1 sm:gap-3 lg:grid-cols-2 lg:items-start">
             <div className="flex w-full justify-center">
-              <div className="w-full max-w-[240px] sm:max-w-[400px] lg:max-w-[520px]">
+              <div className="w-full max-w-[350px] sm:max-w-[400px] lg:max-w-[520px]">
                 <GPXUploader />
               </div>
             </div>
             <div className="flex w-full justify-center">
-              <div className="w-full max-w-[240px] sm:max-w-[400px] lg:max-w-[520px]">
+              <div className="w-full max-w-[350px] sm:max-w-[400px] lg:max-w-[520px]">
                 <StravaConnect
                   onRoutesLoaded={handleRoutesLoaded}
                   onMoreRoutesLoaded={handleMoreRoutesLoaded}
@@ -231,12 +224,6 @@ export default function LandingPage({ error }: LandingPageProps) {
             <div className="w-full max-w-[520px]">
               <GPXUploaderActions />
             </div>
-            <p className="hidden min-[901px]:block text-[13px] sm:text-xs text-zinc-500 dark:text-zinc-400 text-center leading-relaxed sm:leading-normal max-w-lg">
-              All processing runs locally in your browser for privacy and
-              responsiveness. Use the built-in sample route to explore features
-              like climb detection, weather forecasts, and interactive elevation
-              profiles.
-            </p>
           </div>
           {error && (
             <div className="mt-4 rounded-lg bg-red-50 dark:bg-red-900/20 p-4 text-sm text-red-800 dark:text-red-200">
