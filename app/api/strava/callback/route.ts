@@ -62,7 +62,19 @@ function renderError(message: string, redirectTo: string) {
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const redirectTo = url.origin + "/";
+  const redirectOrigin =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.SITE_URL ||
+    process.env.URL ||
+    (() => {
+      const forwardedHost =
+        request.headers.get("x-forwarded-host") ||
+        request.headers.get("host");
+      const forwardedProto =
+        request.headers.get("x-forwarded-proto") || "https";
+      return forwardedHost ? `${forwardedProto}://${forwardedHost}` : url.origin;
+    })();
+  const redirectTo = `${redirectOrigin.replace(/\\/$/, "")}/`;
   const error = url.searchParams.get("error");
   const code = url.searchParams.get("code");
 
