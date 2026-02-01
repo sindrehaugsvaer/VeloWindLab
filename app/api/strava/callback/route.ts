@@ -68,18 +68,21 @@ export async function GET(request: Request) {
     process.env.URL ||
     (() => {
       const forwardedHost =
-        request.headers.get("x-forwarded-host") ||
-        request.headers.get("host");
+        request.headers.get("x-forwarded-host") || request.headers.get("host");
       const forwardedProto =
         request.headers.get("x-forwarded-proto") || "https";
-      return forwardedHost ? `${forwardedProto}://${forwardedHost}` : url.origin;
+      return forwardedHost
+        ? `${forwardedProto}://${forwardedHost}`
+        : url.origin;
     })();
-  const redirectTo = `${redirectOrigin.replace(/\\/$/, "")}/`;
+  const redirectTo = `${redirectOrigin.replace(/\/$/, "")}/`;
   const error = url.searchParams.get("error");
   const code = url.searchParams.get("code");
 
   if (error || !code) {
-    const message = error ? `Strava returned an error: ${error}` : "Missing authorization code.";
+    const message = error
+      ? `Strava returned an error: ${error}`
+      : "Missing authorization code.";
     return new Response(renderError(message, redirectTo), {
       status: 400,
       headers: {
@@ -92,12 +95,15 @@ export async function GET(request: Request) {
   const clientSecret = process.env.STRAVA_CLIENT_SECRET;
 
   if (!clientSecret) {
-    return new Response(renderError("Missing STRAVA_CLIENT_SECRET on the server.", redirectTo), {
-      status: 500,
-      headers: {
-        "content-type": "text/html; charset=utf-8",
+    return new Response(
+      renderError("Missing STRAVA_CLIENT_SECRET on the server.", redirectTo),
+      {
+        status: 500,
+        headers: {
+          "content-type": "text/html; charset=utf-8",
+        },
       },
-    });
+    );
   }
 
   const body = new URLSearchParams({
@@ -118,7 +124,8 @@ export async function GET(request: Request) {
   const tokenData = await tokenResponse.json().catch(() => null);
 
   if (!tokenResponse.ok || !tokenData?.access_token) {
-    const message = tokenData?.message || "Failed to exchange authorization code.";
+    const message =
+      tokenData?.message || "Failed to exchange authorization code.";
     return new Response(renderError(message, redirectTo), {
       status: 502,
       headers: {
