@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useGPX } from '@/context/GPXContext';
-import Accordion from './Accordion';
+import { useGPX } from "@/context/GPXContext";
+import Accordion from "./Accordion";
 
 export default function StatsPanel() {
   const { data, userSpeed, setUserSpeed, lapCount, setLapCount } = useGPX();
@@ -21,7 +21,7 @@ export default function StatsPanel() {
   const totalDistance = stats.totalDistance * lapCount;
   const totalElevationGain = stats.totalElevationGain * lapCount;
   const totalElevationLoss = stats.totalElevationLoss * lapCount;
-  const estimatedTimeSeconds = (totalDistance / 1000) / userSpeed * 3600;
+  const estimatedTimeSeconds = (totalDistance / 1000 / userSpeed) * 3600;
 
   return (
     <Accordion title="Route Statistics">
@@ -56,13 +56,13 @@ export default function StatsPanel() {
           </div>
         </div>
       )}
-      
+
       <div className="grid grid-cols-2 gap-4">
         <StatItem
           label="Distance"
           value={`${(totalDistance / 1000).toFixed(2)} km`}
         />
-        
+
         {data.hasElevation && (
           <>
             <StatItem
@@ -86,7 +86,9 @@ export default function StatsPanel() {
       </div>
 
       <div className="border-t border-gray-200 dark:border-gray-700 mt-4 pt-4">
-        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Time & Speed</h3>
+        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+          Time & Speed
+        </h3>
         <div className="mb-4">
           <label className="block text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
             Average Speed (km/h)
@@ -105,10 +107,7 @@ export default function StatsPanel() {
             label="Estimated Time"
             value={formatTime(estimatedTimeSeconds)}
           />
-          <StatItem
-            label="Avg Speed"
-            value={`${userSpeed} km/h`}
-          />
+          <StatItem label="Avg Speed" value={`${userSpeed} km/h`} />
         </div>
       </div>
     </Accordion>
@@ -118,8 +117,12 @@ export default function StatsPanel() {
 function StatItem({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">{label}</div>
-      <div className="text-lg font-semibold text-gray-900 dark:text-gray-100 mt-1">{value}</div>
+      <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+        {label}
+      </div>
+      <div className="text-lg font-semibold text-gray-900 dark:text-gray-100 mt-1">
+        {value}
+      </div>
     </div>
   );
 }

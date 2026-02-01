@@ -19,17 +19,70 @@ export default function LandingPage({ error }: LandingPageProps) {
   const [stravaRoutesOpen, setStravaRoutesOpen] = useState(false);
   const [stravaRoutes, setStravaRoutes] = useState<StravaRoute[]>([]);
   const [importError, setImportError] = useState<string | null>(null);
+  const [hasMoreRoutes, setHasMoreRoutes] = useState(false);
+  const [loadingMoreRoutes, setLoadingMoreRoutes] = useState(false);
   const [sheetOffset, setSheetOffset] = useState(0);
   const sheetStartYRef = useRef<number | null>(null);
   const sheetOffsetRef = useRef(0);
+  const loadMoreRoutesRef = useRef<(() => Promise<void>) | null>(null);
+  const refreshRoutesRef = useRef<(() => Promise<void>) | null>(null);
+  const routesScrollRef = useRef<HTMLDivElement | null>(null);
+  const [refreshingRoutes, setRefreshingRoutes] = useState(false);
 
   const { importRoute, loading: importLoading } = useStravaImport();
 
-  const handleRoutesLoaded = useCallback((routes: StravaRoute[]) => {
-    setStravaRoutes(routes);
-    setStravaRoutesOpen(true);
-    setImportError(null);
+  const handleRoutesLoaded = useCallback(
+    (routes: StravaRoute[], hasMore: boolean) => {
+      setStravaRoutes(routes);
+      setHasMoreRoutes(hasMore);
+      setStravaRoutesOpen(true);
+      setImportError(null);
+    },
+    [],
+  );
+
+  const handleMoreRoutesLoaded = useCallback(
+    (routes: StravaRoute[], hasMore: boolean) => {
+      setStravaRoutes((prev) => [...prev, ...routes]);
+      setHasMoreRoutes(hasMore);
+      setLoadingMoreRoutes(false);
+    },
+    [],
+  );
+
+  const handleLoadMoreReady = useCallback((loadMore: () => Promise<void>) => {
+    loadMoreRoutesRef.current = loadMore;
   }, []);
+
+  const handleRefreshReady = useCallback((refresh: () => Promise<void>) => {
+    refreshRoutesRef.current = refresh;
+  }, []);
+
+  const handleRefreshRoutes = useCallback(async () => {
+    if (refreshRoutesRef.current && !refreshingRoutes) {
+      setRefreshingRoutes(true);
+      await refreshRoutesRef.current();
+      setRefreshingRoutes(false);
+    }
+  }, [refreshingRoutes]);
+
+  const handleRoutesScroll = useCallback(
+    (e: React.UIEvent<HTMLDivElement>) => {
+      const target = e.currentTarget;
+      const nearBottom =
+        target.scrollHeight - target.scrollTop - target.clientHeight < 100;
+      if (
+        nearBottom &&
+        hasMoreRoutes &&
+        !loadingMoreRoutes &&
+        loadMoreRoutesRef.current
+      ) {
+        setLoadingMoreRoutes(true);
+        loadMoreRoutesRef.current();
+      }
+    },
+    [hasMoreRoutes, loadingMoreRoutes],
+  );
 
   const handleImportRoute = useCallback(
     async (route: StravaRoute) => {
@@ -48,6 +101,75 @@ export default function LandingPage({ error }: LandingPageProps) {
     const km = meters / 1000;
     return `${km.toFixed(1)} km`;
   }, []);
+
+  // Decode Google polyline encoding to lat/lng array
+  const decodePolyline = useCallback((encoded: string): [number, number][] => {
+    const points: [number, number][] = [];
+    let index = 0;
+    let lat = 0;
+    let lng = 0;
+
+    while (index < encoded.length) {
+      let shift = 0;
+      let result = 0;
+      let byte: number;
+
+      do {
+        byte = encoded.charCodeAt(index++) - 63;
+        result |= (byte & 0x1f) << shift;
+        shift += 5;
+      } while (byte >= 0x20);
+
+      lat += result & 1 ? ~(result >> 1) : result >> 1;
+
+      shift = 0;
+      result = 0;
+
+      do {
+        byte = encoded.charCodeAt(index++) - 63;
+        result |= (byte & 0x1f) << shift;
+        shift += 5;
+      } while (byte >= 0x20);
+
+      lng += result & 1 ? ~(result >> 1) : result >> 1;
+
+      points.push([lat / 1e5, lng / 1e5]);
+    }
+
+    return points;
+  }, []);
+
+  // Convert decoded polyline to SVG path
+  const polylineToSvgPath = useCallback(
+    (encoded: string, width: number, height: number): string => {
+      const points = decodePolyline(encoded);
+      if (points.length < 2) return "";
+
+      const lats = points.map((p) => p[0]);
+      const lngs = points.map((p) => p[1]);
+      const minLat = Math.min(...lats);
+      const maxLat = Math.max(...lats);
+      const minLng = Math.min(...lngs);
+      const maxLng = Math.max(...lngs);
+
+      const padding = 2;
+      const scaleX = (width - padding * 2) / (maxLng - minLng || 1);
+      const scaleY = (height - padding * 2) / (maxLat - minLat || 1);
+      const scale = Math.min(scaleX, scaleY);
+
+      const offsetX = (width - (maxLng - minLng) * scale) / 2;
+      const offsetY = (height - (maxLat - minLat) * scale) / 2;
+
+      const svgPoints = points.map(([lat, lng]) => {
+        const x = (lng - minLng) * scale + offsetX;
+        const y = height - ((lat - minLat) * scale + offsetY);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      });
+
+      return `M${svgPoints.join("L")}`;
+    },
+    [decodePolyline],
+  );
 
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-hidden">
@@ -96,7 +218,12 @@ export default function LandingPage({ error }: LandingPageProps) {
             </div>
             <div className="flex w-full justify-center">
               <div className="w-full max-w-[240px] sm:max-w-[400px] lg:max-w-[520px]">
-                <StravaConnect onRoutesLoaded={handleRoutesLoaded} />
+                <StravaConnect
+                  onRoutesLoaded={handleRoutesLoaded}
+                  onMoreRoutesLoaded={handleMoreRoutesLoaded}
+                  onLoadMoreReady={handleLoadMoreReady}
+                  onRefreshReady={handleRefreshReady}
+                />
               </div>
             </div>
           </div>
@@ -121,52 +248,22 @@ export default function LandingPage({ error }: LandingPageProps) {
 
       {/* Footer - sticky bottom */}
       <footer className="relative z-10 shrink-0 pb-3 sm:pb-4 pt-2 px-4 text-center text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400">
-        <div className="hidden min-[901px]:flex flex-wrap items-center justify-center gap-x-2 gap-y-1 leading-tight">
-          <span>
-            Wind &amp; weather by{" "}
-            <a
-              href="https://open-meteo.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sky-600 dark:text-sky-400 hover:underline"
+        <div className="flex flex-col items-center gap-2">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setDataSourcesOpen(true)}
+              className="rounded-full border border-zinc-300/70 dark:border-zinc-700 bg-white/70 dark:bg-zinc-900/70 px-3 py-1 text-[11px] text-zinc-700 dark:text-zinc-300 backdrop-blur"
             >
-              Open-Meteo
-            </a>{" "}
-            (
-            <a
-              href="https://open-meteo.com/en/docs#license"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sky-600 dark:text-sky-400 hover:underline"
+              Data & privacy
+            </button>
+            <button
+              onClick={() => setPwaTipsOpen(true)}
+              className="max-[900px]:block hidden rounded-full border border-zinc-300/70 dark:border-zinc-700 bg-white/70 dark:bg-zinc-900/70 px-3 py-1 text-[11px] text-zinc-700 dark:text-zinc-300 backdrop-blur"
             >
-              CC BY 4.0
-            </a>
-            )
-          </span>
-          <span
-            aria-hidden="true"
-            className="text-zinc-400/60 hidden sm:inline"
-          >
-            •
-          </span>
-          <span>
-            Maps by{" "}
-            <a
-              href="https://openfreemap.org/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sky-600 dark:text-sky-400 hover:underline"
-            >
-              OpenFreeMap
-            </a>
-          </span>
-          <span
-            aria-hidden="true"
-            className="text-zinc-400/60 hidden sm:inline"
-          >
-            •
-          </span>
-          <span>
+              Add to home screen
+            </button>
+          </div>
+          <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
             Made with &lt;3 by{" "}
             <a
               href="https://github.com/sindrehaugsvaer"
@@ -178,39 +275,10 @@ export default function LandingPage({ error }: LandingPageProps) {
             </a>
           </span>
         </div>
-        <div className="flex min-[901px]:hidden items-center justify-center">
-          <div className="flex flex-col items-center gap-2">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setDataSourcesOpen(true)}
-                className="rounded-full border border-zinc-300/70 dark:border-zinc-700 bg-white/70 dark:bg-zinc-900/70 px-3 py-1 text-[11px] text-zinc-700 dark:text-zinc-300 backdrop-blur"
-              >
-                Data sources
-              </button>
-              <button
-                onClick={() => setPwaTipsOpen(true)}
-                className="rounded-full border border-zinc-300/70 dark:border-zinc-700 bg-white/70 dark:bg-zinc-900/70 px-3 py-1 text-[11px] text-zinc-700 dark:text-zinc-300 backdrop-blur"
-              >
-                Add to home screen
-              </button>
-            </div>
-            <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
-              Made with &lt;3 by{" "}
-              <a
-                href="https://github.com/sindrehaugsvaer"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sky-600 dark:text-sky-400 hover:underline"
-              >
-                Sindre
-              </a>
-            </span>
-          </div>
-        </div>
       </footer>
 
       {/* Data sources bottom sheet */}
-      <div className="fixed inset-0 z-50 max-[900px]:block hidden pointer-events-none">
+      <div className="fixed inset-0 z-50 pointer-events-none">
         <div
           className={`absolute inset-0 bg-black/40 transition-opacity duration-300 ${dataSourcesOpen ? "opacity-100" : "opacity-0"}`}
           style={{
@@ -252,7 +320,7 @@ export default function LandingPage({ error }: LandingPageProps) {
           <div className="mx-auto mb-0.5 h-1.5 w-12 rounded-full bg-zinc-300 dark:bg-zinc-700" />
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-              Data sources
+              Data sources & processing
             </h3>
           </div>
           <div className="space-y-2 text-xs text-zinc-600 dark:text-zinc-300">
@@ -296,6 +364,25 @@ export default function LandingPage({ error }: LandingPageProps) {
               like climb detection, weather forecasts, and interactive elevation
               profiles.
             </p>
+          </div>
+          <div className="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+            <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
+              Strava data use
+            </h4>
+            <ul className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed space-y-1.5">
+              <li>
+                VeloWindLab connects to your Strava account only to access your
+                saved routes — never your activities or profile.
+              </li>
+              <li>You choose whether to include private routes.</li>
+              <li>
+                Nothing is stored or shared — all data stays in your browser.
+              </li>
+              <li>
+                You can disconnect anytime via your Strava settings or by
+                clearing local storage.
+              </li>
+            </ul>
           </div>
         </div>
       </div>
@@ -357,24 +444,46 @@ export default function LandingPage({ error }: LandingPageProps) {
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                 Select a route to import
               </h3>
-              <button
-                onClick={() => setStravaRoutesOpen(false)}
-                className="text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleRefreshRoutes}
+                  disabled={refreshingRoutes}
+                  className="text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 disabled:opacity-50"
+                  title="Refresh routes"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
+                  <svg
+                    className={`w-5 h-5 ${refreshingRoutes ? "animate-spin" : ""}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setStravaRoutesOpen(false)}
+                  className="text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
             </div>
             {importError && (
               <div className="mt-2 rounded-lg bg-red-50 dark:bg-red-900/20 px-3 py-2 text-xs text-red-700 dark:text-red-200">
@@ -382,13 +491,36 @@ export default function LandingPage({ error }: LandingPageProps) {
               </div>
             )}
           </div>
-          <div className="flex-1 overflow-y-auto px-4 pb-4">
+          <div
+            ref={routesScrollRef}
+            className="flex-1 overflow-y-auto px-4 pb-4"
+            onScroll={handleRoutesScroll}
+          >
             <div className="space-y-2">
               {stravaRoutes.map((route) => (
                 <div
                   key={route.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-3 py-2.5"
+                  className="flex items-center gap-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-3 py-2.5"
                 >
+                  {route.polyline && (
+                    <div className="shrink-0 w-12 h-12 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center overflow-hidden">
+                      <svg
+                        viewBox="0 0 48 48"
+                        className="w-full h-full"
+                        preserveAspectRatio="xMidYMid meet"
+                      >
+                        <path
+                          d={polylineToSvgPath(route.polyline, 48, 48)}
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="text-sky-500 dark:text-sky-400"
+                        />
+                      </svg>
+                    </div>
+                  )}
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
                       {route.name}
@@ -406,7 +538,31 @@ export default function LandingPage({ error }: LandingPageProps) {
                   </button>
                 </div>
               ))}
-              {stravaRoutes.length === 0 && (
+              {loadingMoreRoutes && (
+                <div className="flex justify-center py-3">
+                  <svg
+                    className="animate-spin h-5 w-5 text-zinc-400"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                </div>
+              )}
+              {stravaRoutes.length === 0 && !loadingMoreRoutes && (
                 <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">
                   No routes found in your Strava account.
                 </p>

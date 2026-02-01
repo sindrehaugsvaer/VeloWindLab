@@ -15,14 +15,18 @@ interface StravaTokens {
 }
 
 export interface StravaRoute {
-  id: number;
+  id: string;
   name: string;
   distance: number;
   elevation_gain?: number;
+  polyline?: string;
 }
 
 interface StravaConnectProps {
-  onRoutesLoaded?: (routes: StravaRoute[]) => void;
+  onRoutesLoaded?: (routes: StravaRoute[], hasMore: boolean) => void;
+  onMoreRoutesLoaded?: (routes: StravaRoute[], hasMore: boolean) => void;
+  onLoadMoreReady?: (loadMore: () => Promise<void>) => void;
+  onRefreshReady?: (refresh: () => Promise<void>) => void;
 }
 
 function loadTokens(): StravaTokens | null {
@@ -54,13 +58,21 @@ function saveTokens(tokens: StravaTokens | null) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(tokens));
 }
 
-export default function StravaConnect({ onRoutesLoaded }: StravaConnectProps) {
+export default function StravaConnect({
+  onRoutesLoaded,
+  onMoreRoutesLoaded,
+  onLoadMoreReady,
+  onRefreshReady,
+}: StravaConnectProps) {
   const { loading } = useGPX();
   const [tokens, setTokens] = useState<StravaTokens | null>(null);
   const [routesLoading, setRoutesLoading] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const tokensRef = useRef<StravaTokens | null>(null);
+  const currentPageRef = useRef(1);
+  const athleteIdRef = useRef<number | null>(null);
+  const ROUTES_PER_PAGE = 30;
 
   useEffect(() => {
     const stored = loadTokens();
@@ -96,9 +108,32 @@ export default function StravaConnect({ onRoutesLoaded }: StravaConnectProps) {
     saveTokens(next);
   }, []);
 
-  const disconnect = useCallback(() => {
-    updateTokens(null);
+  const [disconnectLoading, setDisconnectLoading] = useState(false);
+  const [wasDisconnected, setWasDisconnected] = useState(false);
+
+  const disconnect = useCallback(async () => {
+    setDisconnectLoading(true);
     setError(null);
+
+    try {
+      const current = tokensRef.current;
+      if (current?.access_token) {
+        // Call Strava's deauthorize endpoint
+        await fetch("https://www.strava.com/oauth/deauthorize", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: `access_token=${current.access_token}`,
+        });
+      }
+    } catch {
+      // Ignore errors - we still want to clear local tokens
+    }
+
+    updateTokens(null);
+    setWasDisconnected(true);
+    setDisconnectLoading(false);
   }, [updateTokens]);
 
   const getValidAccessToken = useCallback(async (): Promise<string> => {
@@ -169,9 +204,23 @@ export default function StravaConnect({ onRoutesLoaded }: StravaConnectProps) {
       } as StravaTokens;
 
       updateTokens(updated);
+      athleteIdRef.current = data.id;
       return data.id;
     },
     [updateTokens],
+  );
+
+  const mapRouteData = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (routes: any[]): StravaRoute[] =>
+      routes.map((r) => ({
+        id: String(r.id_str || r.id),
+        name: r.name,
+        distance: r.distance,
+        elevation_gain: r.elevation_gain,
+        polyline: r.map?.summary_polyline || undefined,
+      })),
+    [],
   );
 
   const loadRoutes = useCallback(async () => {
@@ -181,8 +230,11 @@ export default function StravaConnect({ onRoutesLoaded }: StravaConnectProps) {
     try {
       const accessToken = await getValidAccessToken();
       const athleteId = await ensureAthleteId(accessToken);
+      athleteIdRef.current = athleteId;
+      currentPageRef.current = 1;
+
       const response = await fetch(
-        `https://www.strava.com/api/v3/athletes/${athleteId}/routes`,
+        `https://www.strava.com/api/v3/athletes/${athleteId}/routes?page=1&per_page=${ROUTES_PER_PAGE}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -195,7 +247,9 @@ export default function StravaConnect({ onRoutesLoaded }: StravaConnectProps) {
         throw new Error(data?.message || "Failed to fetch Strava routes.");
       }
 
-      onRoutesLoaded?.(data as StravaRoute[]);
+      const routes = mapRouteData(data);
+      const hasMore = data.length === ROUTES_PER_PAGE;
+      onRoutesLoaded?.(routes, hasMore);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to load Strava routes.";
@@ -203,55 +257,180 @@ export default function StravaConnect({ onRoutesLoaded }: StravaConnectProps) {
     } finally {
       setRoutesLoading(false);
     }
-  }, [ensureAthleteId, getValidAccessToken, onRoutesLoaded]);
+  }, [ensureAthleteId, getValidAccessToken, mapRouteData, onRoutesLoaded, ROUTES_PER_PAGE]);
+
+  const loadMoreRoutes = useCallback(async () => {
+    if (!athleteIdRef.current) return;
+
+    try {
+      const accessToken = await getValidAccessToken();
+      const nextPage = currentPageRef.current + 1;
+
+      const response = await fetch(
+        `https://www.strava.com/api/v3/athletes/${athleteIdRef.current}/routes?page=${nextPage}&per_page=${ROUTES_PER_PAGE}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      const data = await response.json();
+      if (!response.ok || !Array.isArray(data)) {
+        throw new Error(data?.message || "Failed to fetch more routes.");
+      }
+
+      currentPageRef.current = nextPage;
+      const routes = mapRouteData(data);
+      const hasMore = data.length === ROUTES_PER_PAGE;
+      onMoreRoutesLoaded?.(routes, hasMore);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to load more routes.";
+      setError(message);
+    }
+  }, [getValidAccessToken, mapRouteData, onMoreRoutesLoaded, ROUTES_PER_PAGE]);
+
+  const refreshRoutes = useCallback(async () => {
+    currentPageRef.current = 1;
+    await loadRoutes();
+  }, [loadRoutes]);
+
+  // Register callbacks for parent component
+  useEffect(() => {
+    onLoadMoreReady?.(loadMoreRoutes);
+  }, [loadMoreRoutes, onLoadMoreReady]);
+
+  useEffect(() => {
+    onRefreshReady?.(refreshRoutes);
+  }, [refreshRoutes, onRefreshReady]);
 
   const handleAuthorize = useCallback(() => {
     setAuthLoading(true);
     setError(null);
+    setWasDisconnected(false);
     window.location.href = authorizeUrl;
   }, [authorizeUrl]);
 
+  // Auto-clear the disconnected message after 5 seconds
+  useEffect(() => {
+    if (wasDisconnected) {
+      const timer = setTimeout(() => {
+        setWasDisconnected(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [wasDisconnected]);
+
+  // Spinner component for loading states
+  const Spinner = ({ size = "default" }: { size?: "default" | "large" }) => (
+    <svg
+      className={`animate-spin ${size === "large" ? "h-8 w-8 sm:h-10 sm:w-10" : "h-4 w-4 sm:h-5 sm:w-5"}`}
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+      />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+      />
+    </svg>
+  );
+
   return (
     <div className="w-full">
-      <div className="min-h-[90px] sm:min-h-[120px] lg:min-h-[200px] rounded-2xl border border-zinc-200/70 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm p-2 sm:p-3 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-1.5 sm:gap-3 text-center">
-          {!isAuthenticated ? (
+      <div className="min-h-[90px] sm:min-h-[120px] lg:min-h-[200px] rounded-2xl border border-zinc-200/70 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm p-2 sm:p-3 flex flex-col items-center justify-center">
+        {authLoading ? (
+          /* STATE: While connecting - full box spinner, no border */
+          <div className="flex items-center justify-center">
+            <Spinner size="large" />
+          </div>
+        ) : isAuthenticated ? (
+          /* STATE 2: While connected */
+          <div className="flex flex-col items-center gap-2 sm:gap-3 w-full">
+            {/* Powered by Strava logo */}
+            <Image
+              src="/api_logo_pwrdBy_strava_stack_white.svg"
+              alt="Powered by Strava"
+              width={120}
+              height={40}
+              className="h-6 sm:h-8 w-auto invert dark:invert-0"
+            />
+
+            {/* Action buttons */}
+            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+              <button
+                onClick={loadRoutes}
+                disabled={routesLoading || loading || disconnectLoading}
+                className="px-2 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-sm font-semibold text-white bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-1.5"
+              >
+                {routesLoading ? (
+                  <>
+                    <Spinner />
+                    <span>Loading...</span>
+                  </>
+                ) : (
+                  "Load Strava routes"
+                )}
+              </button>
+              <button
+                onClick={disconnect}
+                disabled={routesLoading || disconnectLoading}
+                className="px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-sm font-medium text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:border-zinc-300 dark:hover:border-zinc-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-1.5"
+              >
+                {disconnectLoading ? (
+                  <>
+                    <Spinner />
+                    <span>Disconnecting...</span>
+                  </>
+                ) : (
+                  "Disconnect"
+                )}
+              </button>
+            </div>
+
+            {/* Status text */}
+            <p className="text-[10px] sm:text-sm text-zinc-500 dark:text-zinc-400">
+              Connected to Strava.
+            </p>
+          </div>
+        ) : (
+          /* STATE 1 & 3: Before connected / After disconnected */
+          <div className="flex flex-col items-center gap-1.5 sm:gap-3 text-center">
             <button
               onClick={handleAuthorize}
               disabled={authLoading}
               aria-label="Connect with Strava"
-              className="rounded-lg transition-opacity hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="rounded-lg transition-all duration-150 hover:scale-105 hover:shadow-lg active:scale-100 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none border border-zinc-200 dark:border-transparent flex items-center justify-center"
             >
               <Image
-                src="/btn_strava_connect_with_white_x2.png"
+                src="/btn_strava_connect_with_white.svg"
                 alt="Connect with Strava"
                 width={210}
                 height={48}
-                className="h-8 sm:h-11 w-auto"
+                className="h-8 sm:h-11 w-auto rounded-lg"
                 priority
               />
             </button>
-          ) : (
-            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-              <button
-                onClick={loadRoutes}
-                disabled={routesLoading || loading}
-                className="px-2 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-sm font-semibold text-white bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {routesLoading ? "Loading..." : "Load Strava routes"}
-              </button>
-              <button
-                onClick={disconnect}
-                className="px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-sm font-medium text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:border-zinc-300 dark:hover:border-zinc-500"
-              >
-                Disconnect
-              </button>
-            </div>
-          )}
-          <p className="text-[10px] sm:text-sm text-zinc-500 dark:text-zinc-400">
-            Connect with Strava to import your saved routes directly.
-          </p>
-        </div>
+            {wasDisconnected ? (
+              <p className="text-[10px] sm:text-sm text-zinc-500 dark:text-zinc-400 border border-dashed border-[#FC4C02] rounded-lg px-3 py-1.5">
+                Disconnected from Strava. You can reconnect anytime.
+              </p>
+            ) : (
+              <p className="text-[10px] sm:text-sm text-zinc-500 dark:text-zinc-400">
+                Connect with Strava to import your saved routes directly.
+              </p>
+            )}
+          </div>
+        )}
 
         {error && (
           <div className="mt-3 rounded-lg bg-red-50 dark:bg-red-900/20 px-3 py-2 text-xs sm:text-sm text-red-700 dark:text-red-200">
