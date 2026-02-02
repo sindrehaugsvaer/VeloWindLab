@@ -555,7 +555,15 @@ export function useStravaImport() {
         }
 
         const blob = await response.blob();
-        const fileName = `${route.name.replace(/[^a-z0-9-_]+/gi, "-")}.gpx`;
+        const normalizedName = route.name
+          .normalize("NFC")
+          .replace(/[\\/:*?"<>|]+/g, "-")
+          .replace(/[\u0000-\u001F\u007F]+/g, "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .replace(/[. ]+$/g, "")
+          .replace(/^\.+/, "");
+        const fileName = `${normalizedName || "strava-route"}.gpx`;
         const file = new File([blob], fileName, {
           type: "application/gpx+xml",
         });

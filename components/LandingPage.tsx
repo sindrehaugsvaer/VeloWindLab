@@ -22,6 +22,7 @@ export default function LandingPage({ error }: LandingPageProps) {
   const [stravaRoutesOpen, setStravaRoutesOpen] = useState(false);
   const [stravaRoutes, setStravaRoutes] = useState<StravaRoute[]>([]);
   const [importError, setImportError] = useState<string | null>(null);
+  const [importingRouteId, setImportingRouteId] = useState<string | null>(null);
   const [hasMoreRoutes, setHasMoreRoutes] = useState(false);
   const [loadingMoreRoutes, setLoadingMoreRoutes] = useState(false);
   const loadMoreRoutesRef = useRef<(() => Promise<void>) | null>(null);
@@ -75,15 +76,25 @@ export default function LandingPage({ error }: LandingPageProps) {
   const handleImportRoute = useCallback(
     async (route: StravaRoute) => {
       setImportError(null);
-      const result = await importRoute(route);
-      if (!result.success) {
-        setImportError(result.error || "Failed to import route");
-      } else {
-        setStravaRoutesOpen(false);
+      setImportingRouteId(route.id);
+      try {
+        const result = await importRoute(route);
+        if (!result.success) {
+          setImportError(result.error || "Failed to import route");
+        } else {
+          setStravaRoutesOpen(false);
+        }
+      } finally {
+        setImportingRouteId(null);
       }
     },
     [importRoute],
   );
+
+  const handleCloseStravaRoutes = useCallback(() => {
+    setStravaRoutesOpen(false);
+    setImportingRouteId(null);
+  }, []);
 
   return (
     <div className="relative flex min-h-screen min-h-[100svh] w-full flex-col overflow-hidden">
@@ -190,11 +201,12 @@ export default function LandingPage({ error }: LandingPageProps) {
         open={stravaRoutesOpen}
         routes={stravaRoutes}
         importLoading={importLoading}
+        importingRouteId={importingRouteId}
         importError={importError}
         loadingMoreRoutes={loadingMoreRoutes}
         hasMoreRoutes={hasMoreRoutes}
         refreshingRoutes={refreshingRoutes}
-        onClose={() => setStravaRoutesOpen(false)}
+        onClose={handleCloseStravaRoutes}
         onRefresh={handleRefreshRoutes}
         onImportRoute={handleImportRoute}
         onLoadMore={handleLoadMoreRoutes}

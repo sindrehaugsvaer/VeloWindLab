@@ -8,6 +8,7 @@ interface StravaRoutesBottomSheetProps {
   open: boolean;
   routes: StravaRoute[];
   importLoading: boolean;
+  importingRouteId: string | null;
   importError: string | null;
   loadingMoreRoutes: boolean;
   hasMoreRoutes: boolean;
@@ -22,6 +23,7 @@ export default function StravaRoutesBottomSheet({
   open,
   routes,
   importLoading,
+  importingRouteId,
   importError,
   loadingMoreRoutes,
   hasMoreRoutes,
@@ -314,10 +316,36 @@ export default function StravaRoutesBottomSheet({
                   </div>
                   <button
                     onClick={() => onImportRoute(route)}
-                    disabled={importLoading}
+                    disabled={importLoading || importingRouteId !== null}
                     className="shrink-0 px-3 py-1.5 text-xs font-semibold text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 rounded-lg hover:border-sky-300 dark:hover:border-sky-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {importLoading ? "..." : "Import"}
+                    {importingRouteId === route.id ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <svg
+                          className="h-3.5 w-3.5 animate-spin"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                          />
+                        </svg>
+                        Importing
+                      </span>
+                    ) : (
+                      "Import"
+                    )}
                   </button>
                 </div>
               ))}
