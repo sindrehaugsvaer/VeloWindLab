@@ -365,7 +365,14 @@ export default function StravaConnect({
 
   return (
     <div className="w-full">
-      <div className="min-h-[90px] sm:min-h-[120px] lg:min-h-[200px] rounded-2xl border border-zinc-200/70 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm px-2 py-2 sm:px-3 sm:py-4 md:py-5 lg:px-4 lg:py-6 flex flex-col items-center justify-center">
+      <div className="relative min-h-[90px] sm:min-h-[120px] lg:min-h-[200px] rounded-2xl border border-zinc-200/70 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm px-2 py-2 sm:px-3 sm:py-4 md:py-5 lg:px-4 lg:py-6 flex flex-col items-center justify-center overflow-hidden">
+        {/* Corner ribbon
+        TODO: Remove when Strava approves increased athletes allowed to connect */}
+        <div className="absolute rotate-45 right-[-45px] lg:right-[-35px] top-[10px] lg:top-[15px] w-[130px] py-[6px] lg:py-[8px] bg-gradient-to-r from-[#e04000] via-[#FC4C02] to-[#e04000] text-center shadow-md flex items-center justify-center">
+          <span className="text-[6px] lg:text-[8px] font-bold uppercase tracking-wide text-white drop-shadow-sm">
+            Coming soon!
+          </span>
+        </div>
         {authLoading ? (
           /* STATE: While connecting - full box spinner, no border */
           <div className="flex items-center justify-center">
